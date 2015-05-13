@@ -1,7 +1,12 @@
-from eventlet import wsgi
 import eventlet
-from urlrecorder import record_url
+import os
+from eventlet import wsgi
+from paste.deploy import loadapp
 
-app = record_url()
+conf = "etc/api-paste.ini"
+appname = "main"
+#import pdb
+#pdb.set_trace()
+app = loadapp("config:%s" % os.path.abspath(conf), appname)
+
 wsgi.server(eventlet.listen(('', 80)), app)
-
