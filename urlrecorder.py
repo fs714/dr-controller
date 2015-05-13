@@ -1,6 +1,6 @@
 import logging
 import logging.config
-from urllib import quote
+from webob import Request, Response
 
 
 class record_url:
@@ -9,34 +9,20 @@ class record_url:
         self.logger = logging.getLogger("record_url")
 
     def __call__(self, environ, start_response):
-        status = '200 OK'
-        response_headers = [('Content-type', 'text/plain')]
-        start_response(status, response_headers)
-        url = self.url_reconstruction(environ)
+        req = Request(environ)
+        res = Response()
+
+        url = req.url
         self.logger.info("--------------------------------")
         self.logger.info(url)
         self.logger.info("------")
-        for key, value in environ.items():
-            self.logger.info(key + " = " + str(value))
-        return [url + '\n']
 
-    def url_reconstruction(self, environ):
-        url = environ['wsgi.url_scheme']+'://'
+        res.content_type = 'text/plain'
+        parts = []
+        for name, value in sorted(req.environ.items()):
+            parts.append('%s: %r' % (name, value))
+            self.logger.info(name + " = " + str(value))
+        res.body = '\n'.join(parts)
+        res.body += '\n'
 
-        if environ.get('HTTP_HOST'):
-            url += environ['HTTP_HOST']
-        else:
-            url += environ['SERVER_NAME']
-
-            if environ['wsgi.url_scheme'] == 'https':
-                if environ['SERVER_PORT'] != '443':
-                    url += ':' + environ['SERVER_PORT']
-                else:
-                    if environ['SERVER_PORT'] != '80':
-                        url += ':' + environ['SERVER_PORT']
-
-        url += quote(environ.get('SCRIPT_NAME', ''))
-        url += quote(environ.get('PATH_INFO', ''))
-        if environ.get('QUERY_STRING'):
-            url += '?' + environ['QUERY_STRING']
-        return url
+        return res(environ, start_response)
