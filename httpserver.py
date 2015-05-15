@@ -1,12 +1,12 @@
 import eventlet
 import os
+import commands
 from eventlet import wsgi
 from paste.deploy import loadapp
 
 conf = "etc/api-paste.ini"
 appname = "main"
-#import pdb
-#pdb.set_trace()
+commands.getoutput('mkdir -p ./logs')
 app = loadapp("config:%s" % os.path.abspath(conf), appname)
 
 wsgi.server(eventlet.listen(('', 80)), app)

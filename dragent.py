@@ -1,4 +1,5 @@
 import webob.dec
+import json
 from webob import Response
 
 
@@ -14,11 +15,7 @@ class DrAgent(object):
     @webob.dec.wsgify
     def __call__(self, req):
         res = Response()
-        res.content_type = 'text/plain'
-        parts = []
-        for name, value in sorted(req.environ.items()):
-            parts.append('%s: %r' % (name, value))
-        res.body = '\n'.join(parts)
-        res.body += '\n'
-
+        res.content_type = 'application/json'
+        res.body = json.dumps(req.environ['updated_env'],
+                              indent=4, sort_keys=True)
         return res
