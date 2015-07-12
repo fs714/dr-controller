@@ -4,9 +4,9 @@ import commands
 from eventlet import wsgi
 from paste.deploy import loadapp
 
-conf = "etc/api-paste.ini"
+conf = "conf/api-paste.ini"
 appname = "main"
-commands.getoutput('mkdir -p ./logs')
+commands.getoutput('mkdir -p ../logs')
 app = loadapp("config:%s" % os.path.abspath(conf), appname)
 
 wsgi.server(eventlet.listen(('', 80)), app)

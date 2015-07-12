@@ -13,7 +13,7 @@ def url_recorder_factory(global_conf, **local_conf):
 
 class UrlRecorder(object):
     def __init__(self, app, global_conf, local_conf):
-        logging.config.fileConfig("./etc/logging.conf")
+        logging.config.fileConfig("./conf/logging.conf")
         self.logger = logging.getLogger("record_url")
         self.app = app
 

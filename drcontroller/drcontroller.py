@@ -3,11 +3,11 @@ import json
 from webob import Response
 
 
-def dr_agent_factory(global_conf, **local_conf):
-    return DrAgent(global_conf, local_conf)
+def dr_controller_factory(global_conf, **local_conf):
+    return DrController(global_conf, local_conf)
 
 
-class DrAgent(object):
+class DrController(object):
     def __init__(self, global_conf, local_conf):
         self.global_conf = global_conf
         self.local_conf = local_conf
