@@ -1,6 +1,6 @@
 # The DB operations module
 There are three files.
-'db.py' is the DB operation API.
+'db_Dao.py' is the DB operation API.
 'models.py' defines the ORM between Objects and Models, including DRGlance, DRNova, DRNeutron.
 'db_test.py' is the a simple DB operations test.
 
