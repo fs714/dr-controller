@@ -12,7 +12,7 @@ import ConfigParser
 # handle_type = nova, glance or neutron
 # key_service_type = {'glance':'image', 'nova':'', 'neutron':''}
 
-class BaseHandler(object)
+class BaseHandler(object):
     def __init__(self, set_conf, handle_type):
         self.set_conf = set_conf
         self.handle_type
