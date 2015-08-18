@@ -21,7 +21,7 @@ class DRGlance(Base):
     other = Column(String(50))
 
     def __repr__(self):
-        return "<DRGlance(primary_uuid = '%s', secondary_uuid = '%s', other = '%s')>" % (self.primary_uuid, self.secondary_uuid, self.other)
+        return "<DRGlance(primary_uuid = '%s', secondary_uuid = '%s', status = '%s', other = '%s')>" % (self.primary_uuid, self.secondary_uuid, self.status, self.other)
 
 
 class DRNeutron(Base):
@@ -39,8 +39,8 @@ class DRNeutron(Base):
     other =  Column(String(50))
 
     def __repr__(self):
-        return "<DRNeutron(primary_uuid = '%s', secondary_uuid = '%s', forward = '%s', request='%s',other = '%s')>" %\
-                (self.primary_uuid, self.secondary_uuid, self.forward, self.request, self.other)
+        return "<DRNeutron(primary_uuid = '%s', secondary_uuid = '%s', forward = '%s', request='%s', status = '%s', other = '%s')>" %\
+                (self.primary_uuid, self.secondary_uuid, self.forward, self.request, self.status, self.other)
 
 class DRNova(Base):
     '''
@@ -56,6 +56,6 @@ class DRNova(Base):
     other = Column(String(50))
 
     def __repr__(self):
-        return "<DRNova(primary_uuid = '%s', secondary_uuid = '%s', node_name = '%s', other = '%s')>" % (self.primary_uuid, self.secondary_uuid, self.node_name, self.other)
+        return "<DRNova(primary_uuid = '%s', secondary_uuid = '%s', node_name = '%s', status = '%s', other = '%s')>" % (self.primary_uuid, self.secondary_uuid, self.node_name, self.status, self.other)
 
 

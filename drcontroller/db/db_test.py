@@ -20,11 +20,15 @@ def test_delete():
     print ' <GlanceDao:delete_mult>: %s' % glanceDao.delete_mult_by_primary_uuids(['primary_uuid_2','primary_uuid_3'])
     print '<GlnceDao:get_all>: %s' % glanceDao.get_all()
 
+def test_update():
+    glanceDao = DRGlanceDao(DRGlance)
+    print ' <GlanceDao:update>: %s' % glanceDao.update_by_primary_uuid('primary_uuid_1', {'secondary_uuid':'secondary_uuid_1_update','status':'active_1_update'})
+
 if __name__ == '__main__':
     test_add()
+    test_update()
     test_get()
     test_delete()
-
 
 
 

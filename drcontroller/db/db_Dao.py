@@ -56,7 +56,6 @@ class BaseDao(object):
         '''
         Get one object by primary_uuid.
 
-        class_name: DRGlance, DRNova or DRNeutron
         primary_uuid: the primary uuid of the object of DRGlance, DRNova or DRneutron
         '''
         return self.getSession().query(self.table).filter(self.table.primary_uuid==primary_uuid).first()
@@ -65,7 +64,6 @@ class BaseDao(object):
         '''
         Get multiple objects by primary_uuids
 
-        class_name: DRGlance, DRNova or DRNeutron
         primary_uuid_list: a list of primary_uuids selected
         '''
         return self.getSession().query(self.table).filter(self.table.primary_uuid.in_(primary_uuid_list)).all()
@@ -73,10 +71,24 @@ class BaseDao(object):
     def get_all(self):
         '''
         Get all uuids including primary_uuid and secondary_uuid.
-
-        class_name: DRGlance, DRNova or DRNeutron
         '''
         return self.getSession().query(self.table).all()
+
+    def update_by_primary_uuid(self, primary_uuid, pdict, *args, **kwargs):
+        '''
+        Update one  by kwargs.
+
+        kwargs: keyword args represent the items need to be updated
+        '''
+        session = self.getSession()
+        update_object = session.query(self.table).filter(self.table.primary_uuid == primary_uuid).first()
+        for key in pdict:
+            if hasattr(update_object, key):
+                setattr(update_object, key, pdict[key])
+        session.flush()
+        session.commit()
+        session.close()
+        return 1
 
     def delete_by_primary_uuid(self, primary_uuid):
         '''
@@ -94,7 +106,6 @@ class BaseDao(object):
         '''
         Delete multiple objects.
 
-        class_name: DRGlance, DRNova or DRNeutron
         primary_uuid_list: a list of primary_uuids selected
         '''
         count = 0
@@ -105,7 +116,6 @@ class BaseDao(object):
         session.commit()
         session.close()
         return count
-
 
 
 class DRGlanceDao(BaseDao):
