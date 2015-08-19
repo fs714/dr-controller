@@ -1,9 +1,9 @@
 #!/usr/bin/env python2.7
-
+import sys
 from sqlalchemy import create_engine
 from sqlalchemy.orm import backref, mapper, relation, sessionmaker
-from models import Base, DRGlance, DRNova, DRNeutron
-
+from models import Base, DRGlance, DRNova, DRNeutron, DRNeutronSubnet
+sys.path.append('/home/eshufan/project/drcontroller/drcontroller/db')
 # create a connection to a sqlite database and turn echo on to see the auto-generated SQL
 engine = create_engine("sqlite:///dr.db", echo=False)
 #engine = create_engine("mysql://test:1234@localhost/dr", echo=True)
@@ -135,10 +135,35 @@ class DRNovaDao(BaseDao):
 class DRNeutronDao(BaseDao):
 
     def __init__(self, DRNova):
-        super(DRNeutronDao, self).__init_-(DRNeutron)
+        super(DRNeutronDao, self).__init__(DRNeutron)
 
+class DRNeutronSubnetDao(BaseDao):
+    def __init__(self,DRNeutronSubnet):
+        super(DRNeutronSubnetDao, self).__init__(DRNeutronSubnet)
 
+    def get_subnets_by_network_id(self, network_id):
+        '''
+        Get all subnets of a network.
 
+        network_id: the uuid of network
+        return : the primary_uuids of all the subnets
+        '''
+        return self.getSession().query(self.table).filter(self.table.network_id==network_id).all()
+
+    def delete_subnets_by_network_id(self, network_id):
+        '''
+        Delete all subnets.
+
+        '''
+        count = 0
+        session = self.getSession()
+        subnet_list = session.query(self.table).filter(self.table.network_id==network_id).all()
+        for subnet in subnet_list:
+            session.delete(session.query(self.table).filter(self.table.primary_uuid==subnet.primary_uuid).first())
+            count = count+1
+        session.commit()
+        session.close()
+        return count
 
 
 

@@ -4,8 +4,16 @@ There are three files.
 'models.py' defines the ORM between Objects and Models, including DRGlance, DRNova, DRNeutron.
 'db_test.py' is the a simple DB operations test.
 
+# DB connection setting
+# For using sqlite, the process of create engine in 'db_Dao.py'is :
+engine = create_engine("sqlite:///dr.db", echo=False)
+
+# For using marria or mysql DB ,the process of create engine in 'db_Dao.py'is :
+engine = create_engine("mysql://test:1234@localhost/dr", echo=False)
+
 ## How to use DB module
 ## Take a example for DRGlanceDao
+
 ```
 from db_Dao import DRGlanceDao, DRNovaDao, DRNeutronDao
 from models import DRGlance, DRNova, DRNeutron
