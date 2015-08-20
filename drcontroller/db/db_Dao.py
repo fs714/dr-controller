@@ -4,9 +4,15 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import backref, mapper, relation, sessionmaker
 from models import Base, DRGlance, DRNova, DRNeutron, DRNeutronSubnet
 sys.path.append('/home/eshufan/project/drcontroller/drcontroller/db')
+
 # create a connection to a sqlite database and turn echo on to see the auto-generated SQL
 engine = create_engine("sqlite:///dr.db", echo=False)
-#engine = create_engine("mysql://test:1234@localhost/dr", echo=True)
+
+# create a connection to mariadb on host
+#engine = create_engine("mysql://root:123456@10.175.150.15:13306/dr", echo=True)
+
+# create a connection to mariadb from other container
+#engine = create_engine("mysql://root:123456@192.168.0.2:13306/dr", echo=True)
 
 # get a handle on the metadata
 metadata = Base.metadata

@@ -1,15 +1,34 @@
 # The DB operations module
 There are three files.
 'db_Dao.py' is the DB operation API.
-'models.py' defines the ORM between Objects and Models, including DRGlance, DRNova, DRNeutron.
+'models.py' defines the ORM between Objects and Models, including DRGlance, DRNova, DRNeutron, DRNeutronSubnet.
 'db_test.py' is the a simple DB operations test.
 
-# DB connection setting
-# For using sqlite, the process of create engine in 'db_Dao.py'is :
-engine = create_engine("sqlite:///dr.db", echo=False)
+# Mariadb Information
+Mariadb in docker container on our server (15).
+1. if you want to try mariadb by sql command line
+    a.  Login to the container bash shell
+          docker exec -it mariadb bash
+    b.  Export some ENV
+         export TERM=dumb
+    c.  Login to mariadb
+          mysql -u root -p
+         (Password is 123456)
+2.  Connect to database on host
+    mysql -h 10.175.150.15 -P 13306 -u root -p
+3.  If you want to connect to mariadb from other container:
+    192.168.0.2:13306
 
-# For using marria or mysql DB ,the process of create engine in 'db_Dao.py'is :
-engine = create_engine("mysql://test:1234@localhost/dr", echo=False)
+## DB connection setting, you maybe modify db_Dao.py.
+
+1. to connect sqlite, the process of create engine in 'db_Dao.py' should be:
+   engine = create_engine("sqlite:///dr.db", echo=False)
+
+2. to connect mariadb on host, the process of create engine in 'db_Dao.py' should be:
+   engine = create_engine("mysql://root:123456@10.175.250.200:13306/dr", echo=False) 
+
+3. to connect mariadb from other container,the process of create engine in 'db_Dao.py' should be:
+   engine = create_engine("mysql://root:123456@192.168.0.2:13306/dr", echo=False) 
 
 ## How to use DB module
 ## Take a example for DRGlanceDao
