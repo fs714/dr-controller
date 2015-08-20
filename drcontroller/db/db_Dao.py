@@ -136,7 +136,7 @@ class DRGlanceDao(BaseDao):
 class DRNovaDao(BaseDao):
 
     def __init__(self, DRNova):
-        super(DRGlanceDao, self).__init__(DRNova)
+        super(DRNovaDao, self).__init__(DRNova)
 
 class DRNeutronDao(BaseDao):
 
