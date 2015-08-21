@@ -13,6 +13,7 @@ import re
 
 def post_handle(message):
     cf=ConfigParser.ConfigParser()
+    errlogger = logging.getLogger("GlanceHandler:accept")
     glanceDao = DRGlanceDao(DRGlance)
     cf.read("/home/eshufan/projects/drcontroller/drcontroller/conf/set.conf")
     drf_keystone = keystoneclient.Client(auth_url=cf.get("drf","auth_url"),
@@ -44,7 +45,6 @@ def post_handle(message):
                            tenant_name=cf.get("drc","tenant_name"))
         drc_glance_endpoint = drc_keystone.service_catalog.url_for(service_type='image',
                                                    endpoint_type='publicURL')
-        data=drf_glance.images.data(image=image_id)
         drc_glance = glanceclient.Client('1',drc_glance_endpoint, token=drc_keystone.auth_token)
         image=drc_glance.images.create(name = message['Response']['image']['name']+"_shadow",
                                  container_format = message['Response']['image']['container_format'],
@@ -58,7 +58,9 @@ def post_handle(message):
                                  size=message['Response']['image']['size']                 )
 #        print "drc:",drc_glance_endpoint
         glanceDao.add(DRGlance(primary_uuid=image_id,secondary_uuid=image.id,status='active'))
-
+        errlogger.info("#####################################################")
+        errlogger.info(image_id)
+        errlogger.info(glanceDao.get_by_primary_uuid(image_id).secondary_uuid)
 
 def delete_handle(message):
     glanceDao = DRGlanceDao(DRGlance)
@@ -189,8 +191,8 @@ class GlanceHandler(object):
            for i in range(0,len(req)):
                if req[i] != {}:
                   env=req[i].body
-                  if len(env)>0 :
-                     message=eval(env.replace('null','None').replace('false','False').replace('true','True'))
+                  if len(env)>0:
+                     message = eval(env.replace('null','None').replace('false','False').replace('true','True'))
                      if message['Request']['type']=='POST':
                         pattern = re.compile(r'http://.*/v./images$')
                         match = pattern.match(message['Request']['url'])
@@ -201,12 +203,10 @@ class GlanceHandler(object):
                         match = pattern.match(message['Request']['url'])
                         if match:
                             delete_handle(message)
-                        delete_handle(message)
                      else:
                         pattern = re.compile(r'http://.*/v./images/.{36}$')
                         match = pattern.match(message['Request']['url'])
                         if match:
                             put_handle(message)
-                        put_handle(message)
         self.logger.info("--- Hello Glance ---")
         return ['Hello Glance']
