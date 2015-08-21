@@ -6,10 +6,10 @@ from models import Base, DRGlance, DRNova, DRNeutron, DRNeutronSubnet
 sys.path.append('/home/eshufan/project/drcontroller/drcontroller/db')
 
 # create a connection to a sqlite database and turn echo on to see the auto-generated SQL
-#engine = create_engine("sqlite:///dr.db", echo=False)
+engine = create_engine("sqlite:///dr.db", echo=False)
 
 # create a connection to mariadb on host
-engine = create_engine("mysql://root:123456@10.175.150.15:13306/dr", echo=True)
+#engine = create_engine("mysql://root:123456@10.175.150.15:13306/dr", echo=True)
 
 # create a connection to mariadb from other container
 #engine = create_engine("mysql://root:123456@192.168.0.2:13306/dr", echo=True)
@@ -132,7 +132,7 @@ class BaseDao(object):
 
 class DRGlanceDao(BaseDao):
 
-    def __init__(self, DRGlance):
+    def __init__(self):
         super(DRGlanceDao, self).__init__(DRGlance)
 
     '''
@@ -141,7 +141,7 @@ class DRGlanceDao(BaseDao):
 
 class DRNovaDao(BaseDao):
 
-    def __init__(self, DRNova):
+    def __init__(self):
         super(DRNovaDao, self).__init__(DRNova)
 
     def get_all_uuids_node(self):
@@ -166,11 +166,11 @@ class DRNovaDao(BaseDao):
 
 class DRNeutronDao(BaseDao):
 
-    def __init__(self, DRNova):
+    def __init__(self):
         super(DRNeutronDao, self).__init__(DRNeutron)
 
 class DRNeutronSubnetDao(BaseDao):
-    def __init__(self,DRNeutronSubnet):
+    def __init__(self):
         super(DRNeutronSubnetDao, self).__init__(DRNeutronSubnet)
 
     def get_subnets_by_network_id(self, network_id):

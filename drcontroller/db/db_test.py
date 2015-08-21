@@ -2,10 +2,10 @@
 from db_Dao import DRGlanceDao, DRNovaDao, DRNeutronDao, DRNeutronSubnetDao, init_db, drop_db
 from models import Base, DRGlance, DRNova, DRNeutron, DRNeutronSubnet
 def test_add():
-    glanceDao = DRGlanceDao(DRGlance)
-    neutronDao = DRNeutronDao(DRNeutron)
-    neutronSubnetDao = DRNeutronSubnetDao(DRNeutronSubnet)
-    novaDao = DRNovaDao(DRNova)
+    glanceDao = DRGlanceDao()
+    neutronDao = DRNeutronDao()
+    neutronSubnetDao = DRNeutronSubnetDao()
+    novaDao = DRNovaDao()
     ##
     ## Glance
     ##
@@ -49,10 +49,10 @@ def test_add():
                                                   status='active',
                                                   other='other'))
 def test_get():
-    glanceDao = DRGlanceDao(DRGlance)
-    novaDao = DRNovaDao(DRNova)
-    neutronDao = DRNeutronDao(DRNeutron)
-    neutronSubnetDao = DRNeutronSubnetDao(DRNeutronSubnet)
+    glanceDao = DRGlanceDao()
+    novaDao = DRNovaDao()
+    neutronDao = DRNeutronDao()
+    neutronSubnetDao = DRNeutronSubnetDao()
     ##
     ## glance
     ##
@@ -73,9 +73,9 @@ def test_get():
 
 '''
 def test_delete():
-    glanceDao = DRGlanceDao(DRGlance)
-    neutronDao = DRNeutronDao(DRNeutron)
-    neutronSubnetDao = DRNeutronSubnetDao(DRNeutronSubnet)
+    glanceDao = DRGlanceDao()
+    neutronDao = DRNeutronDao()
+    neutronSubnetDao = DRNeutronSubnetDao()
     print ' <GlanceDao:delete>: %s' % glanceDao.delete_by_primary_uuid('primary_uuid_1')
     print ' <GlanceDao:delete_mult>: %s' % glanceDao.delete_mult_by_primary_uuids(['primary_uuid_2','primary_uuid_3'])
     print '<GlnceDao:get_all>: %s' % glanceDao.get_all()
@@ -83,7 +83,7 @@ def test_delete():
 '''
 
 def test_update():
-    glanceDao = DRGlanceDao(DRGlance)
+    glanceDao = DRGlanceDao()
     print ' <GlanceDao:update>: %s' % glanceDao.update_by_primary_uuid('primary_uuid_1', {'secondary_uuid':'secondary_uuid_1_update','status':'active_1_update'})
 
 if __name__ == '__main__':
