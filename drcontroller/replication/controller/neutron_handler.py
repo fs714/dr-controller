@@ -145,8 +145,11 @@ class NeutronApp(base_handler.BaseHandler):
             if netwrok_secondary_uuid != None:
                 endpoint, auth_token = self.keystone_handle(key_type='drc', service_type='network',endpoint_type='pyblicURL')
                 drc_neutron = neutronclient.Client('2.0', endpoint_url=endpoint, token=auth_token)
-                drc_neutron.delete_network(network_secondary_uuid)
                 ## delete network means that all subnets of it alse must be deleted.
+                drc_neutron.delete_network(network_secondary_uuid)
+                neutronSubnets = neutronSubnetDao.get_subnets_by_network_id(network_secondary_uuid)
+                for delete_subnet in neutronSubnets:
+                    drc_neutron.delete_subnet(delete_subnet.secondary_uuid)
                 neutronDao.delete_by_primary_uuid(network_primary_uuid)
                 neutronSubnetDao.delete_subnets_by_network_id(network_secondary_uuid)
         ##
