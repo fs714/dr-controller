@@ -5,6 +5,11 @@ from eventlet import wsgi
 from paste.deploy import loadapp
 
 
+# Monkey patch socket, time, select, threads
+eventlet.patcher.monkey_patch(all=False, socket=True, time=True,
+                              select=True, thread=True, os=True)
+
+
 def main():
     conf = "conf/api-paste.ini"
     appname = "main"
