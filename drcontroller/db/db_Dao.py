@@ -6,19 +6,19 @@ from models import Base, DRGlance, DRNova, DRNeutron, DRNeutronSubnet
 sys.path.append('/home/eshufan/project/drcontroller/drcontroller/db')
 
 # create a connection to a sqlite database and turn echo on to see the auto-generated SQL
-engine = create_engine("sqlite:///dr.db", echo=False)
+#engine = create_engine("sqlite:///dr.db", echo=False)
 
 # create a connection to mariadb on host
-#engine = create_engine("mysql://root:123456@10.175.150.15:13306/dr", echo=True)
+engine = create_engine("mysql://root:123456@10.175.150.15:13306/dr", echo=True)
 
 # create a connection to mariadb from other container
 #engine = create_engine("mysql://root:123456@192.168.0.2:13306/dr", echo=True)
 
-# get a handle on the metadata
-metadata = Base.metadata
+def init_db():
+    Base.metadata.create_all(engine)
 
-# create the table
-metadata.create_all(engine)
+def drop_db():
+    Base.metadata.drop_all(engine)
 
 # create DBSession
 DBSession = sessionmaker(bind = engine)
@@ -80,6 +80,12 @@ class BaseDao(object):
         '''
         return self.getSession().query(self.table).all()
 
+    def get_all_uuids(self):
+        '''
+        '''
+        return self.getSession().query(self.table.primary_uuid, self.table.secondary_uuid).all()
+
+
     def update_by_primary_uuid(self, primary_uuid, pdict, *args, **kwargs):
         '''
         Update one  by kwargs.
@@ -137,6 +143,26 @@ class DRNovaDao(BaseDao):
 
     def __init__(self, DRNova):
         super(DRNovaDao, self).__init__(DRNova)
+
+    def get_all_uuids_node(self):
+        '''
+        Get all Nova information.
+
+        return : [(primary_uuid,secondary_uuid,node_name),...]
+        '''
+        return self.getSession().query(self.table.primary_uuid,self.table.secondary_uuid, self.table.node_name).all()
+
+    def get_uuids_node(self, base=True):
+        '''
+        Get  Nova information by type.
+
+        return : [(primary_uuid,secondary_uuid,node_name),...]
+        '''
+        if base:
+            nova_type="0"
+        else:
+            nova_type="1"
+        return self.getSession().query(self.table.primary_uuid, self.table.secondary_uuid, self.table.node_name).filter(self.table.nova_type==nova_type).all()
 
 class DRNeutronDao(BaseDao):
 
