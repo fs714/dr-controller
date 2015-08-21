@@ -1,5 +1,5 @@
 #/usr/bin/env python2.7
-from db_Dao import DRGlanceDao, DRNova, DRNeutron
+from db_Dao import DRGlanceDao, DRNovaDao, DRNeutronDao
 from models import Base, DRGlance, DRNova, DRNeutron
 import logging
 import pdb
@@ -178,6 +178,11 @@ def put_handle(message):
                                  owner = message['Response']['image']['owner']
                                  )
 
+def test():
+    changelog = logging.getLogger("GlanceHandler:accept")
+    changelog.info("testhandle")
+    novaDao = DRNovaDao(DRNova)
+    changelog.info(novaDao.get_by_primary_uuid("test").secondary_uuid)
 
 
 class GlanceHandler(object):
@@ -202,7 +207,8 @@ class GlanceHandler(object):
                         pattern = re.compile(r'http://.*/v./images/.{36}$')
                         match = pattern.match(message['Request']['url'])
                         if match:
-                            delete_handle(message)
+#                            delete_handle(message)
+                            test()
                      else:
                         pattern = re.compile(r'http://.*/v./images/.{36}$')
                         match = pattern.match(message['Request']['url'])
