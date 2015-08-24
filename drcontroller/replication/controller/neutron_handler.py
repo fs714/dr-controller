@@ -5,8 +5,8 @@ from neutronclient.neutron import client as neutron_client
 import base_handler
 from db_Dao import DRNeutronDao, DRNeutronSubnetDao
 from models import Base,DRNeutron, DRNeutronSubnet
-#set_conf = "/home/eshufan/project/drcontroller/drcontroller/conf/set.conf"
-set_conf = "/home/eshufan/project/drcontroller/drcontroller/replication/controller/set.conf"
+set_conf = "/home/eshufan/projects/drcontroller/drcontroller/conf/set.conf"
+#set_conf = "/home/eshufan/projects/drcontroller/drcontroller/replication/controller/set.conf"
 handle_type = "Neutron"
 
 class NeutronApp(base_handler.BaseHandler):
@@ -62,7 +62,7 @@ class NeutronApp(base_handler.BaseHandler):
             ## network status is active, so create a shadow in secondary site.
             ##
             if status == 'ACTIVE':
-                pdb.set_trace()
+            #    pdb.set_trace()
                 auth_endpoint_url, auth_token = self.keystone_handle(key_type='drc', service_type='network', endpoint_type='publicURL')
                 drc_neutron = neutron_client.Client('2.0',endpoint_url=auth_endpoint_url, token=auth_token)
                 network_params = {'admin_state_up':message['Response']['network']['admin_state_up'],
@@ -84,7 +84,7 @@ class NeutronApp(base_handler.BaseHandler):
         ## The request is for subnet
         ##
         elif network_type == 'subnets':
-            pdb.set_trace()
+            #pdb.set_trace()
             endpoint, auth_token = self.keystone_handle(key_type='drf', service_type='network', endpoint_type='publicURL')
             drf_neutron = neutron_client.Client('2.0', endpoint_url=endpoint, token=auth_token)
             drf_network_id = message['Response']['subnet']['network_id']
@@ -126,7 +126,7 @@ class NeutronApp(base_handler.BaseHandler):
         ## The request is for network.
         ##
         if network_type == 'networks':
-            pdb.set_trace()
+            #pdb.set_trace()
             url = message['Request']['url'].split('/')
             network_primary_uuid = url[-1].split('.')[0]
             ## get the secondary uuid from db for deleting network
@@ -145,7 +145,7 @@ class NeutronApp(base_handler.BaseHandler):
         ## The request is for subnet.
         ##
         elif network_type == 'subnets':
-            pdb.set_trace()
+           # pdb.set_trace()
             url = message['Request']['url'].split('/')
             subnet_primary_uuid = url[-1].split('.')[0]
             subnet_secondary_uuid = neutronSubnetDao.get_by_primary_uuid(subnet_primary_uuid).secondary_uuid
@@ -182,8 +182,8 @@ class NeutronApp(base_handler.BaseHandler):
             ## the network status is active , so update the network shadow in secondary site.
             ##
             if status == 'ACTIVE':
-                pdb.set_trace()
-                endpoint, auth_token = self.keystone_handle(key_type="drf", service_type='network', endpoint_type='publicURL')
+            #    pdb.set_trace()
+                endpoint, auth_token = self.keystone_handle(key_type="drc", service_type='network', endpoint_type='publicURL')
                 drc_neutron = neutron_client.Client('2.0', endpoint_url=endpoint, token=auth_token)
                 # get drc_network_uuid of  secondary site  from DB
                 drc_network_uuid=neutronDao.get_by_primary_uuid(drf_network_uuid).secondary_uuid
@@ -215,7 +215,7 @@ class NeutronApp(base_handler.BaseHandler):
             ##
             ## the subnet status is active , so update the  subnet shadow in secondary site.
             ##
-            pdb.set_trace()
+            #pdb.set_trace()
             endpoint, auth_token = self.keystone_handle(key_type='drc', service_type='network', endpoint_type='publicURL')
             drc_neutron = neutron_client.Client('2.0', endpoint_url=endpoint, token=auth_token)
             ##
