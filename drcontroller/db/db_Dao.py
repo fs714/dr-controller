@@ -150,19 +150,13 @@ class DRNovaDao(BaseDao):
 
         return : [(primary_uuid,secondary_uuid,node_name),...]
         '''
-        return self.getSession().query(self.table.primary_uuid,self.table.secondary_uuid, self.table.node_name).all()
+        return self.getSession().query(self.table.primary_instance_uuid, 
+                                       self.table.secondary_instance_uuid,
+                                       self.table.primary_image_uuid,
+                                       self.table.secondary_image_uuid,
+                                       self.table.secondary_node_name,
+                                       self.table.primary_node_name).all()
 
-    def get_uuids_node(self, base=True):
-        '''
-        Get  Nova information by type.
-
-        return : [(primary_uuid,secondary_uuid,node_name),...]
-        '''
-        if base:
-            nova_type="0"
-        else:
-            nova_type="1"
-        return self.getSession().query(self.table.primary_uuid, self.table.secondary_uuid, self.table.node_name).filter(self.table.nova_type==nova_type).all()
 
 class DRNeutronDao(BaseDao):
 

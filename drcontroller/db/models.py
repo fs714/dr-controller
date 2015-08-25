@@ -76,12 +76,13 @@ class DRNova(Base):
     __tablename__ = "dr_nova"
 
     id = Column(Integer, Sequence('dr_nova_id_seq'), primary_key = True)
-    primary_uuid = Column(String(50))
-    secondary_uuid = Column(String(50))
-    node_name = Column(String(50))
+    primary_instance_uuid = Column(String(50))
+    secondary_instance_uuid = Column(String(50))
+    primary_image_uuid = Column(String(50))
+    secondary_image_uuid = Column(String(50))
+    primary_node_name = Column(String(50))
+    secondary_node_name = Column(String(50))
     status = Column(String(20))
-    # 0:base, 1:runtime
-    nova_type = Column(String(2))
     other = Column(String(50))
 
     def __repr__(self):
