@@ -6,10 +6,10 @@ from models import Base, DRGlance, DRNova, DRNeutron, DRNeutronSubnet
 sys.path.append('/home/eshufan/project/drcontroller/drcontroller/db')
 
 # create a connection to a sqlite database and turn echo on to see the auto-generated SQL
-engine = create_engine("sqlite:///dr.db", echo=False)
+#engine = create_engine("sqlite:///dr.db", echo=False)
 
 # create a connection to mariadb on host
-#engine = create_engine("mysql://root:123456@10.175.150.15:13306/dr", echo=True)
+engine = create_engine("mysql://root:123456@10.175.150.15:13306/dr", echo=True)
 
 # create a connection to mariadb from other container
 #engine = create_engine("mysql://root:123456@192.168.0.2:13306/dr", echo=True)
@@ -150,13 +150,73 @@ class DRNovaDao(BaseDao):
 
         return : [(primary_uuid,secondary_uuid,node_name),...]
         '''
-        return self.getSession().query(self.table.primary_instance_uuid, 
+        return self.getSession().query(self.table.primary_instance_uuid,
                                        self.table.secondary_instance_uuid,
                                        self.table.primary_image_uuid,
                                        self.table.secondary_image_uuid,
                                        self.table.secondary_node_name,
                                        self.table.primary_node_name).all()
 
+
+    def get_by_primary_instance_uuid(self, primary_instance_uuid):
+        '''
+        Get one Nova object by primary_instance_uuid.
+
+        primary_uuid: the primary uuid of the object of DRGlance, DRNova or DRneutron
+        '''
+        return self.getSession().query(self.table).filter(self.table.primary_instance_uuid==primary_instance_uuid).first()
+
+    def get_mult_by_primary_instance_uuids(self, primary_instance_uuid_list):
+        '''
+        Get multiple objects by primary_uuids
+
+        primary_uuid_list: a list of primary_uuids selected
+        '''
+        return self.getSession().query(self.table).filter(self.table.primary_instance_uuid.in_(primary_instance_uuid_list)).all()
+
+
+    def update_by_primary_instance__uuid(self, primary_instance_uuid, pdict, *args, **kwargs):
+        '''
+        Update Nova  by kwargs.
+
+        kwargs: keyword args represent the items need to be updated
+        '''
+        session = self.getSession()
+        update_object = session.query(self.table).filter(self.table.primary_instance_uuid == primary_instance_uuid).first()
+        for key in pdict:
+            if hasattr(update_object, key):
+                setattr(update_object, key, pdict[key])
+        session.flush()
+        session.commit()
+        session.close()
+        return 1
+
+    def delete_by_primary_instance_uuid(self, primary_instance_uuid):
+        '''
+        Delete one object by primary_uuid.
+
+        primary_uuid: the primary uuid of the object of DRGlance, DRNova or DRneutron
+        '''
+        session = self.getSession()
+        session.delete(session.query(self.table).filter(self.table.primary_instance_uuid==primary_instance_uuid).first())
+        session.commit()
+        session.close()
+        return 1
+
+    def delete_mult_by_primary_instance_uuids(self, primary_instance_uuid_list):
+        '''
+        Delete multiple Nova objects.
+
+        primary_instance_uuid_list: a list of primary_uuids selected
+        '''
+        count = 0
+        session = self.getSession()
+        for primary_uuid in primary_uuid_list:
+            session.delete(session.query(self.table).filter(self.table.primary_instance_uuid==primary_uuid).first())
+            count = count+1
+        session.commit()
+        session.close()
+        return count
 
 class DRNeutronDao(BaseDao):
 
