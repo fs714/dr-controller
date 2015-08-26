@@ -14,7 +14,7 @@ import re
 def post_handle(message):
     cf=ConfigParser.ConfigParser()
     errlogger = logging.getLogger("GlanceHandler:accept")
-    glanceDao = DRGlanceDao(DRGlance)
+    glanceDao = DRGlanceDao()
     cf.read("/home/eshufan/projects/drcontroller/drcontroller/conf/set.conf")
     drf_keystone = keystoneclient.Client(auth_url=cf.get("drf","auth_url"),
                            username= cf.get("drf","user"),
@@ -63,7 +63,7 @@ def post_handle(message):
         errlogger.info(glanceDao.get_by_primary_uuid(image_id).secondary_uuid)
 
 def delete_handle(message):
-    glanceDao = DRGlanceDao(DRGlance)
+    glanceDao = DRGlanceDao()
     errlog = logging.getLogger("GlanceHandler:accept")
     url=message['Request']['url'].split('/')
     image_id=url[len(url)-1]
@@ -105,7 +105,7 @@ def delete_handle(message):
 
 
 def put_handle(message):
-    glanceDao = DRGlanceDao(DRGlance)
+    glanceDao = DRGlanceDao()
     cf=ConfigParser.ConfigParser()
     cf.read("/home/eshufan/projects/drcontroller/drcontroller/conf/set.conf")
     image_id=message['Response']['image']['id']
@@ -207,8 +207,7 @@ class GlanceHandler(object):
                         pattern = re.compile(r'http://.*/v./images/.{36}$')
                         match = pattern.match(message['Request']['url'])
                         if match:
-#                            delete_handle(message)
-                            test()
+                            delete_handle(message)
                      else:
                         pattern = re.compile(r'http://.*/v./images/.{36}$')
                         match = pattern.match(message['Request']['url'])

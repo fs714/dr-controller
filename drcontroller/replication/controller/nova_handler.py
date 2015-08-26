@@ -15,7 +15,7 @@ def change_post_handle(message):
     changelog = logging.getLogger("NovaHandler:accept")
     changelog.info("change_post_handle")
     cf=ConfigParser.ConfigParser()
-    novaDao = DRNovaDao(DRNova)
+    novaDao = DRNovaDao()
     cf.read("/home/eshufan/projects/drcontroller/drcontroller/conf/set.conf")
     drf_ncred={}
     drf_ncred['auth_url']= cf.get("drf","auth_url")
@@ -46,10 +46,9 @@ def change_post_handle(message):
             drc_ncred['project_id']=cf.get("drc","tenant_name")
             drc_nova = novaclient.Client(**drc_ncred)
             try:
-                drc_id = novaDao.get_by_primary_uuid(server_id).secondary_uuid
+                drc_id = novaDao.get_by_primary_instance_uuid(server_id).secondary_instance_uuid
             except:
                 return
-            fip="10.175.150.209"
             drc_nova.servers.get(drc_id).add_floating_ip(fip)
 
     if (message["Request"]["wsgi.input"].has_key("removeFloatingIp")):
@@ -72,10 +71,9 @@ def change_post_handle(message):
             drc_ncred['project_id']=cf.get("drc","tenant_name")
             drc_nova = novaclient.Client(**drc_ncred)
             try:
-                drc_id = novaDao.get_by_primary_uuid(server_id).secondary_uuid
+                drc_id = novaDao.get_by_primary_instance_uuid(server_id).secondary_instance_uuid
             except:
                 return
-            fip="10.175.150.209"
             drc_nova.servers.get(drc_id).remove_floating_ip(fip)
 
     if (message["Request"]["wsgi.input"].has_key("os-stop")):
@@ -92,12 +90,11 @@ def change_post_handle(message):
                 if (count==180):
                     return
             try:
-                novaDao.update_by_primary_uuid(server_id,{"status":"SHUTOFF"})
+                novaDao.update_by_primary_instance__uuid(server_id,{"status":"SHUTOFF"})
+                changelog.info(server_id)
+                changelog.info(novaDao.get_by_primary_instance_uuid(server_id).status)
             except:
                 return
-            changelog.info(server_id)
-            changelog.info(novaDao.get_by_primary_uuid(server_id).status)
-
 
     if (message["Request"]["wsgi.input"].has_key("os-start")):
             drf_server=drf_nova.servers.get(server_id)
@@ -113,17 +110,17 @@ def change_post_handle(message):
                 if (count==60):
                     return
             try:
-                novaDao.update_by_primary_uuid(server_id,{"status":"ACTIVE"})
+                novaDao.update_by_primary_instance__uuid(server_id,{"status":"ACTIVE"})
+                changelog.info(server_id)
+                changelog.info(novaDao.get_by_primary_instance_uuid(server_id).status)
             except:
                 return
-            changelog.info(server_id)
-            changelog.info(novaDao.get_by_primary_uuid(server_id).status)
-
 
 def post_handle(message):
     cf=ConfigParser.ConfigParser()
-    novaDao = DRNovaDao(DRNova)
-    glanceDao = DRGlanceDao(DRGlance)
+    novaDao = DRNovaDao()
+    glanceDao = DRGlanceDao()
+    neutronDao = DRNeutronDao()
     cf.read("/home/eshufan/projects/drcontroller/drcontroller/conf/set.conf")
     drf_ncred={}
     drf_ncred['auth_url']= cf.get("drf","auth_url")
@@ -135,6 +132,7 @@ def post_handle(message):
     url=message['Request']['url'].split('/')
     server_id=message['Response']['server']['id']
     status=drf_nova.servers.get(server_id).status
+    host_id=drf_nova.servers.get(server_id).to_dict()['OS-EXT-SRV-ATTR:host']
     while (status == "BUILD" ):
         time.sleep(1)
         status=drf_nova.servers.get(server_id).status
@@ -145,26 +143,34 @@ def post_handle(message):
         drc_ncred['api_key'] = cf.get("drc","password")
         drc_ncred['project_id']=cf.get("drc","tenant_name")
         drc_nova = novaclient.Client(**drc_ncred)
-#        image_id = message['Request']['wsgi.input']['server']['imageRef'],
-#        pdb.set_trace()
-#        drc_image = glanceDao.get_by_primary_uuid(image_id).secondary_uuid
+        image_id = message['Request']['wsgi.input']['server']['imageRef']
+        net_id = message['Request']['wsgi.input']['server']['networks'][0]['uuid']
+        drc_image = glanceDao.get_by_primary_uuid(image_id).secondary_uuid
+        drc_net = neutronDao.get_by_primary_uuid(net_id).secondary_uuid
         if (message['Request']['wsgi.input']['server'].has_key('networks')):
             drc_server=drc_nova.servers.create(name=message['Request']['wsgi.input']['server']['name']+"_shadow",
-                                    image="492a57b9-a508-405e-a19a-500ad347cad1",
+                                    image=drc_image,
                                     flavor=message['Request']['wsgi.input']['server']['flavorRef'],
                                     min_count=message['Request']['wsgi.input']['server']['min_count'],
                                     max_count=message['Request']['wsgi.input']['server']['max_count'],
-                                    nics=[{'net-id':'eb2992c0-5a78-470f-95ac-84780b82018b'}]
+                                    nics=[{'net-id':drc_net}]
             )
         else:
             drc_server=drc_nova.servers.create(name=message['Request']['wsgi.input']['server']['name'],
-                                    image="492a57b9-a508-405e-a19a-500ad347cad1",
+                                    image=drc_image,
                                     flavor=message['Request']['wsgi.input']['server']['flavorRef'],
                                     min_count=message['Request']['wsgi.input']['server']['min_count'],
                                     max_count=message['Request']['wsgi.input']['server']['max_count']
             )
-        novaDao.add(DRNova(primary_uuid=server_id,secondary_uuid=drc_server.id,status='ACTIVE'))
         status=drc_nova.servers.get(drc_server.id).status
+        drc_host_id=drf_nova.servers.get(server_id).to_dict()['OS-EXT-SRV-ATTR:host']
+        novaDao.add(DRNova(primary_instance_uuid=server_id,
+                           secondary_instance_uuid=drc_server.id,
+                           primary_image_uuid=image_id,
+                           secondary_image_uuid=drc_image,
+                           primary_node_name=host_id,
+                           secondary_node_name=drc_host_id,
+                           status='ACTIVE'))
         while (status == "BUILD" ):
             time.sleep(1)
             status=drc_nova.servers.get(drc_server.id).status
@@ -173,14 +179,14 @@ def post_handle(message):
 
 
 def delete_handle(message):
-    novaDao = DRNovaDao(DRNova)
+    novaDao = DRNovaDao()
     errlog = logging.getLogger("NovaHandler:accept")
     url=message['Request']['url'].split('/')
     server_id=url[len(url)-1]
     cf=ConfigParser.ConfigParser()
     cf.read("/home/eshufan/projects/drcontroller/drcontroller/conf/set.conf")
     try:
-        drc_id = novaDao.get_by_primary_uuid(server_id).secondary_uuid
+        drc_id = novaDao.get_by_primary_instance_uuid(server_id).secondary_instance_uuid
     except:
         return
     if (drc_id != None):
@@ -191,7 +197,7 @@ def delete_handle(message):
         drc_ncred['project_id']=cf.get("drc","tenant_name")
         drc_nova = novaclient.Client(**drc_ncred)
         drc_nova.servers.delete(drc_id)
-        novaDao.delete_by_primary_uuid(server_id)
+        novaDao.delete_by_primary_instance_uuid(server_id)
 
 
 
