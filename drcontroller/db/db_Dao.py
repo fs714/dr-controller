@@ -154,8 +154,8 @@ class DRNovaDao(BaseDao):
                                        self.table.secondary_instance_uuid,
                                        self.table.primary_image_uuid,
                                        self.table.secondary_image_uuid,
-                                       self.table.secondary_node_name,
-                                       self.table.primary_node_name).all()
+                                       self.table.primary_node_name,
+                                       self.table.secondary_node_name).all()
 
 
     def get_by_primary_instance_uuid(self, primary_instance_uuid):

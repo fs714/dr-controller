@@ -187,6 +187,6 @@ class NovaHandler(ComponentHandler):
         instance_flows = [LinearFlowCreator().create('instance_op_by_uuid', self.instance_tasks[uuid]) for uuid in self.instance_tasks]
         instance_flow = UnorderedFlowCreator().create('instances_op', instance_flows)
         rebase_flow = UnorderedFlowCreator().create('rebase_op', self.rebase_tasks)
-        self.disc_tasks.append(base_flow, instance_flow, rebase_flow)
+        self.disc_tasks.extend([base_flow, instance_flow, rebase_flow])
         return LinearFlowCreator().create('nova_op', self.disc_tasks + self.restore_tasks)
 
