@@ -232,23 +232,27 @@ class NeutronApp(base_handler.BaseHandler):
             # update the subnet-shadow
             drc_neutron.update_subnet(drc_subnet_uuid, {'subnet':subnet_params})
         elif network_type == 'routers':
-            pdb.set_trace()
+         #   pdb.set_trace()
             url = message['Request']['url'].split('/')
             interface_handle_type = url[-1].split('.')[0]
-            router_id = message['Response']['id']
+            #drf_router_id = message['Response']['id']
+            drf_router_id = '79811a02-05a1-4df3-b62e-df88a271cd01'
             drf_subnet_id = message['Response']['subnet_id']
             drf_subnet_ids = message['Response']['subnet_ids']
             #
             # get subnet_id(subnet_ids) from DB
             #
-            drc_subnet_id = neutronSubnetDao.get_by_primary_uuid(drf_subnet_id)
+            drc_subnet_id = neutronSubnetDao.get_by_primary_uuid(drf_subnet_id).secondary_uuid
+            drc_router_id = '35735fea-2971-47a4-b8e4-a8f65d3bea98'
             endpoint, auth_token = self.keystone_handle(key_type='drc', service_type='network', endpoint_type='publicURL')
             drc_neutron = neutron_client.Client('2.0', endpoint_url=endpoint, token=auth_token)
-            router_params = {'subnet_id':drc_subnet_id }
+            #
+            # only one subnet be handle
+            #
             if interface_handle_type == 'add_router_interface':
-                drc_neutron.add_router_interface(router_id,{'router':router_params})
+                drc_neutron.add_interface_router(drc_router_id,{'subnet_id':drc_subnet_id})
             elif interface_handle_type =='remove_router_interface':
-                drc_neutron.remove_router_interface(router_id, {'router':router_params})
+                drc_neutron.remove_interface_router(drc_router_id, {'subnet_id':drc_subnet_id})
 
         else:
             print 'NeutronAPP put_handle is Error.'

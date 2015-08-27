@@ -3,7 +3,7 @@ There are three files.
 'db_Dao.py' is the DB operation API.
 'models.py' defines the ORM between Objects and Models, including DRGlance, DRNova, DRNeutron, DRNeutronSubnet.
 'db_test.py' is the a simple DB operations test.
-
+'init_db.py' is used to init the 
 # Mariadb Information
 Mariadb in docker container on our server (15).
 1. if you want to try mariadb by sql command line
@@ -30,15 +30,15 @@ Mariadb in docker container on our server (15).
 3. to connect mariadb from other container,the process of create engine in 'db_Dao.py' should be:
    engine = create_engine("mysql://root:123456@192.168.0.2:13306/dr", echo=False) 
 
-## How to use DB module
-## Take a example for DRGlanceDao
+# How to use DB module
+# Take a example for DRGlanceDao
 
 ```
 from db_Dao import DRGlanceDao, DRNovaDao, DRNeutronDao
 from models import DRGlance, DRNova, DRNeutron
 
 # Create a DB operation dao, such as DRGlanceDao
-baseDao = DRGlanceDao(DRGlance) 
+baseDao = DRGlanceDao() 
 
 # Add a object, such as DRGlance
 dr_glance = DRGlance(...)
