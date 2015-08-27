@@ -54,7 +54,7 @@ def post_handle(message):
                                  protected = str(message['Response']['image']['protected']),
                                  is_public = str( message['Response']['image']['is_public']),
                                  owner = message['Response']['image']['owner'],
-                                 location = url ,
+                                 copy_from = url ,
                                  size=message['Response']['image']['size']                 )
 #        print "drc:",drc_glance_endpoint
         glanceDao.add(DRGlance(primary_uuid=image_id,secondary_uuid=image.id,status='active'))
@@ -150,7 +150,7 @@ def put_handle(message):
                                  protected = str(message['Response']['image']['protected']),
                                  is_public = str( message['Response']['image']['is_public']),
                                  owner = message['Response']['image']['owner'],
-                                 location = url ,
+                                 copy_from = url ,
                                  size=message['Response']['image']['size'])
             glanceDao.delete_by_primary_uuid(image_id)
             glanceDao.add(DRGlance(primary_uuid=image_id,secondary_uuid=image.id,status='active'))
