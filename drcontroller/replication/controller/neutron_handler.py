@@ -5,8 +5,8 @@ from neutronclient.neutron import client as neutron_client
 import base_handler
 from db_Dao import DRNeutronDao, DRNeutronSubnetDao
 from models import Base,DRNeutron, DRNeutronSubnet
+
 set_conf = "/home/eshufan/projects/drcontroller/drcontroller/conf/set.conf"
-#set_conf = "/home/eshufan/projects/drcontroller/drcontroller/replication/controller/set.conf"
 handle_type = "Neutron"
 
 class NeutronApp(base_handler.BaseHandler):
@@ -17,7 +17,7 @@ class NeutronApp(base_handler.BaseHandler):
 
     def get_network_type(self, message):
         '''
-        Get the network type for 'networks' or 'subnets'
+        Get the network type for 'networks' , 'subnets' or 'routers'.
         '''
         request_type = message['Request']['type']
         if request_type == 'POST':
@@ -30,7 +30,7 @@ class NeutronApp(base_handler.BaseHandler):
             return network_type
         elif request_type == 'PUT':
             url = message['Request']['url'].split('/')
-            network_type= url[-2]
+            network_type= url[4]
             return network_type
         else:
             return 'error_network_type'
@@ -156,6 +156,9 @@ class NeutronApp(base_handler.BaseHandler):
             ## delete this subnet from table dr_neutron_subnet
             ##
             neutronSubnetDao.delete_by_primary_uuid(subnet_primary_uuid)
+        else:
+            print 'Neutron delete_handle is error'
+            return
 
 
     def put_handle(self, message):
@@ -207,14 +210,9 @@ class NeutronApp(base_handler.BaseHandler):
         ## The request is for subnet.
         ##
         elif network_type == 'subnets':
-            endpoint, auth_token = self.keystone_handle(key_type="drf", service_type='network', endpoint_type='publicURL')
-            drf_neutron = neutron_client.Client('2.0', endpoint_url=endpoint, token=auth_token)
             url = message['Request']['url'].split('/')
             drf_subnet_uuid = url[-1].split('.')[0]
             drf_subnet_name = message['Response']['subnet']['name']
-            ##
-            ## the subnet status is active , so update the  subnet shadow in secondary site.
-            ##
             #pdb.set_trace()
             endpoint, auth_token = self.keystone_handle(key_type='drc', service_type='network', endpoint_type='publicURL')
             drc_neutron = neutron_client.Client('2.0', endpoint_url=endpoint, token=auth_token)
@@ -233,6 +231,25 @@ class NeutronApp(base_handler.BaseHandler):
                              }
             # update the subnet-shadow
             drc_neutron.update_subnet(drc_subnet_uuid, {'subnet':subnet_params})
+        elif network_type == 'routers':
+            pdb.set_trace()
+            url = message['Request']['url'].split('/')
+            interface_handle_type = url[-1].split('.')[0]
+            router_id = message['Response']['id']
+            drf_subnet_id = message['Response']['subnet_id']
+            drf_subnet_ids = message['Response']['subnet_ids']
+            #
+            # get subnet_id(subnet_ids) from DB
+            #
+            drc_subnet_id = neutronSubnetDao.get_by_primary_uuid(drf_subnet_id)
+            endpoint, auth_token = self.keystone_handle(key_type='drc', service_type='network', endpoint_type='publicURL')
+            drc_neutron = neutron_client.Client('2.0', endpoint_url=endpoint, token=auth_token)
+            router_params = {'subnet_id':drc_subnet_id }
+            if interface_handle_type == 'add_router_interface':
+                drc_neutron.add_router_interface(router_id,{'router':router_params})
+            elif interface_handle_type =='remove_router_interface':
+                drc_neutron.remove_router_interface(router_id, {'router':router_params})
+
         else:
             print 'NeutronAPP put_handle is Error.'
             return
