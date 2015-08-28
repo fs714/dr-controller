@@ -6,7 +6,7 @@ from taskflow import engines
 from base import AnsibleTask, ShellTask, LinearFlowCreator, UnorderedFlowCreator
 
 import sys
-sys.path.append("/home/eshufan/project/drcontroller/db")
+sys.path.append("../db")
 from db_Dao import DRGlanceDao, DRNovaDao
 
 def task_list(fn):
@@ -99,7 +99,7 @@ class ComponentHandler(object):
 
     @task_list
     def create_rename_uuid_task(self, host, directory, old, new):
-        return ShellTask('uuid_rename', [host], 'chdir=%s mv %s %s' % (directory, old, new))
+        return ShellTask('%s_rename' % new, [host], 'chdir=%s mv %s %s' % (directory, old, new))
 
     @task_list
     def create_copy_task(self, host, src, dest, uuid):
@@ -136,6 +136,7 @@ class GlanceHandler(ComponentHandler):
         self.create_role_change_task(self.disc_tasks)
         self.create_mount_task(self.disc_tasks)
         for (uuid_primary, uuid_local) in self.db.get_all_uuids():
+            print (uuid_primary, uuid_local)
             self.image_tasks.setdefault(uuid_local, [])
             self.create_rename_uuid_task(self.image_tasks[uuid_local], self.hosts[0], '/var/lib/glance/images', uuid_primary, uuid_local)
         self.create_service_start_task(self.restore_tasks, self.hosts)
@@ -158,7 +159,7 @@ class NovaHandler(ComponentHandler):
 
     @task_list
     def create_rebase_task(self, host, instance_uuid_local, base_uuid_local):
-        return ShellTask('rebase', host, 'chdir=/var/lib/nova/instances/%s qemu-img -u -b /var/lib/nova/instances/_base/%s disk' % (instance_uuid_local, base_uuid_local))
+        return ShellTask('%s_rebase' % instance_uuid_local, [host], 'chdir=/var/lib/nova/instances/%s qemu-img rebase -u -b /var/lib/nova/instances/_base/%s disk' % (instance_uuid_local, base_uuid_local))
 
     def create_tasks(self):
         controllers = ['10.175.150.16'] #config
@@ -167,17 +168,21 @@ class NovaHandler(ComponentHandler):
         self.create_role_change_task(self.disc_tasks)
         self.create_mount_task(self.disc_tasks)
         for (instance_uuid_primary, instance_uuid_local, image_uuid_primary, image_uuid_local, host_primary, host_local) in self.db.get_all_uuids_node():#[('', 'f6158ecb-18ca-4295-b3dd-3d7e0f7394d2', '10.175.150.16')]:
-            self.base_tasks.setdefault(instance_uuid_local, [])
-            self.create_rename_uuid_task(self.base_tasks[instance_uuid_local], host_local, '/var/lib/nova/instances', instance_uuid_primary, instance_uuid_local)
+            print (instance_uuid_primary, instance_uuid_local, image_uuid_local)
+            #host_local = '10.175.150.16' #No!!!
+            #host_primary = '10.175.150.16' #NO!!!
+            self.instance_tasks.setdefault(instance_uuid_local, [])
+            self.create_rename_uuid_task(self.instance_tasks[instance_uuid_local], host_local, '/var/lib/nova/instances', instance_uuid_primary, instance_uuid_local)
+            self.create_fetch_task(self.instance_tasks[instance_uuid_local], host_primary, '/var/lib/novabak/instances/%s/disk.info' % instance_uuid_local, '/tmp/%s/' % instance_uuid_local, instance_uuid_local)
+            self.create_fetch_task(self.instance_tasks[instance_uuid_local], host_primary, '/var/lib/novabak/instances/%s/libvirt.xml' % instance_uuid_local, '/tmp/%s/' % instance_uuid_local, instance_uuid_local)
+            self.create_copy_task(self.instance_tasks[instance_uuid_local], host_local, '/tmp/%s/disk.info' % instance_uuid_local, '/var/lib/nova/instances/%s/' % instance_uuid_local, instance_uuid_local)
+            self.create_copy_task(self.instance_tasks[instance_uuid_local], host_local, '/tmp/%s/libvirt.xml' % instance_uuid_local, '/var/lib/nova/instances/%s/' % instance_uuid_local, instance_uuid_local)
 
             base_uuid_primary = hashlib.sha1(image_uuid_primary).hexdigest()
             base_uuid_local = hashlib.sha1(image_uuid_local).hexdigest()
-            self.instance_tasks.setdefault(base_uuid_local, [])
-            self.create_rename_uuid_task(self.instance_tasks[base_uuid_local], host_local, '/var/lib/nova/instances/_base', base_uuid_primary, base_uuid_local)
-            self.create_fetch_task(self.instance_tasks[base_uuid_local], host_primary, '/var/lib/novabak/instances/%s/disk.info' % base_uuid_local, '/tmp/%s/' % base_uuid_local, base_uuid_local)
-            self.create_fetch_task(self.instance_tasks[base_uuid_local], host_primary, '/var/lib/novabak/instances/%s/libvirt.xml' % base_uuid_local, '/tmp/%s/' % base_uuid_local, base_uuid_local)
-            self.create_copy_task(self.instance_tasks[base_uuid_local], host_local, '/tmp/%s/disk.info' % base_uuid_local, '/var/lib/nova/instances/%s/' % base_uuid_local, base_uuid_local)
-            self.create_copy_task(self.instance_tasks[base_uuid_local], host_local, '/tmp/%s/libvirt.xml' % base_uuid_local, '/var/lib/nova/instances/%s/' % base_uuid_local, base_uuid_local)
+            if base_uuid_local not in self.base_tasks:
+                self.base_tasks.setdefault(base_uuid_local, [])
+                self.create_rename_uuid_task(self.base_tasks[base_uuid_local], host_local, '/var/lib/nova/instances/_base', base_uuid_primary, base_uuid_local)
             self.create_rebase_task(self.rebase_tasks, host_local, instance_uuid_local, base_uuid_local)
         self.create_service_start_task(self.restore_tasks, self.hosts)
 
@@ -187,6 +192,7 @@ class NovaHandler(ComponentHandler):
         instance_flows = [LinearFlowCreator().create('instance_op_by_uuid', self.instance_tasks[uuid]) for uuid in self.instance_tasks]
         instance_flow = UnorderedFlowCreator().create('instances_op', instance_flows)
         rebase_flow = UnorderedFlowCreator().create('rebase_op', self.rebase_tasks)
-        self.disc_tasks.extend([base_flow, instance_flow, rebase_flow])
+        all_uuid_flow = UnorderedFlowCreator().create('uuid_op', [base_flow, instance_flow])
+        self.disc_tasks.extend([all_uuid_flow, rebase_flow])
         return LinearFlowCreator().create('nova_op', self.disc_tasks + self.restore_tasks)
 
