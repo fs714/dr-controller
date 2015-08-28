@@ -137,8 +137,6 @@ class NeutronApp(base_handler.BaseHandler):
                 ## delete network means that all subnets of it alse must be deleted.
                 drc_neutron.delete_network(network_secondary_uuid)
                 neutronSubnets = neutronSubnetDao.get_subnets_by_network_id(network_secondary_uuid)
-                for delete_subnet in neutronSubnets:
-                    drc_neutron.delete_subnet(delete_subnet.secondary_uuid)
                 neutronDao.delete_by_primary_uuid(network_primary_uuid)
                 neutronSubnetDao.delete_subnets_by_network_id(network_secondary_uuid)
         ##

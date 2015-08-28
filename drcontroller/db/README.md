@@ -1,9 +1,3 @@
-# The DB operations module
-There are three files.
-'db_Dao.py' is the DB operation API.
-'models.py' defines the ORM between Objects and Models, including DRGlance, DRNova, DRNeutron, DRNeutronSubnet.
-'db_test.py' is the a simple DB operations test.
-'init_db.py' is used to init the 
 # Mariadb Information
 Mariadb in docker container on our server (15).
 1. if you want to try mariadb by sql command line
@@ -19,7 +13,20 @@ Mariadb in docker container on our server (15).
 3.  If you want to connect to mariadb from other container:
     192.168.0.2:13306
 
-## DB connection setting, you maybe modify db_Dao.py.
+# The DB operations module
+There are three files.
+'db_Dao.py' is the DB operation API.
+'models.py' defines the ORM between Objects and Models, including DRGlance, DRNova, DRNeutron, DRNeutronSubnet.
+'db_test.py' is the a simple DB operations test.
+'init_db.py' is used to initial the DB 'dr'.
+'drop_db.py' is used to delete all tables of DB 'dr' 
+
+# DB init and drop 
+There is a database named 'dr' in Mariadb.
+1. create tables. go into the 'db' dirctory ,and run 'python init_db.py', all tables in 'dr' will be created.
+2. delete tables. go into the 'db' dirctory, and run 'python init_db.py', all tables in 'dr' will be deleted.
+
+# DB connection setting, you maybe modify db_Dao.py.
 
 1. to connect sqlite, the process of create engine in 'db_Dao.py' should be:
    engine = create_engine("sqlite:///dr.db", echo=False)
