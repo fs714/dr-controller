@@ -40,7 +40,7 @@ class RecoveryHandler(object):
     def prepare(self):
         flows = [self.glance_handler.prepare(), self.nova_handler.prepare()]
         flow = UnorderedFlowCreator().create('DR_prepare', flows)
-        return LinearFlowCreator().create('DR', [flow, self.nova_handler.vm_start_task[0]])
+        return LinearFlowCreator().create('DR', [flow] + self.nova_handler.vm_start_task)
 
 class RecoveryError(Exception):
     pass
@@ -88,8 +88,8 @@ class ComponentHandler(object):
 
     @task_list
     def create_role_change_task(self):
-        drdb = 'openstack' #config
-        return ShellTask('%s_role_change' % self.component, self.hosts, 'drbdadm primary %s' % drdb)
+        drbd = 'openstack' #config
+        return ShellTask('%s_role_change' % self.component, self.hosts, 'drbdadm primary %s' % drbd)
 
     @task_list
     def create_backup_task(self):
