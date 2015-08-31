@@ -34,11 +34,13 @@ class RecoveryHandler(object):
         eng.run()
         results = eng.storage.fetch_all()
         print results
+
         return ['Hello Recovery']
 
     def prepare(self):
-        flow = [self.glance_handler.prepare(), self.nova_handler.prepare()]
-        return UnorderedFlowCreator().create('DR', flow)
+        flows = [self.glance_handler.prepare(), self.nova_handler.prepare()]
+        flow = UnorderedFlowCreator().create('DR_prepare', flows)
+        return LinearFlowCreator().create('DR', [flow, self.nova_handler.vm_start_task[0]])
 
 class RecoveryError(Exception):
     pass
@@ -156,10 +158,17 @@ class NovaHandler(ComponentHandler):
         self.instance_tasks = {}
         self.base_tasks = {}
         self.rebase_tasks = []
+        self.instance_ids = []
+        self.vm_start_task = []
 
     @task_list
     def create_rebase_task(self, host, instance_uuid_local, base_uuid_local):
         return ShellTask('%s_rebase' % instance_uuid_local, [host], 'chdir=/var/lib/nova/instances/%s qemu-img rebase -u -b /var/lib/nova/instances/_base/%s disk' % (instance_uuid_local, base_uuid_local))
+
+    @task_list
+    def create_vm_start_task(self):
+        controllers = ['10.175.150.16'] #config
+        return ShellTask('vm_start', [controllers[0]], 'python /home/eshufan/scripts/nova_start_vm.py --instance_ids %s' % ','.join(self.instance_ids))
 
     def create_tasks(self):
         controllers = ['10.175.150.16'] #config
@@ -169,6 +178,7 @@ class NovaHandler(ComponentHandler):
         self.create_mount_task(self.disc_tasks)
         for (instance_uuid_primary, instance_uuid_local, image_uuid_primary, image_uuid_local, host_primary, host_local) in self.db.get_all_uuids_node():#[('', 'f6158ecb-18ca-4295-b3dd-3d7e0f7394d2', '10.175.150.16')]:
             print (instance_uuid_primary, instance_uuid_local, image_uuid_local)
+            self.instance_ids.append(instance_uuid_local)
             #host_local = '10.175.150.16' #No!!!
             #host_primary = '10.175.150.16' #NO!!!
             self.instance_tasks.setdefault(instance_uuid_local, [])
@@ -185,6 +195,7 @@ class NovaHandler(ComponentHandler):
                 self.create_rename_uuid_task(self.base_tasks[base_uuid_local], host_local, '/var/lib/nova/instances/_base', base_uuid_primary, base_uuid_local)
             self.create_rebase_task(self.rebase_tasks, host_local, instance_uuid_local, base_uuid_local)
         self.create_service_start_task(self.restore_tasks, self.hosts)
+        self.create_vm_start_task(self.vm_start_task)
 
     def create_flow(self):
         base_flows = [LinearFlowCreator().create('base_op_by_uuid', self.base_tasks[uuid]) for uuid in self.base_tasks]
