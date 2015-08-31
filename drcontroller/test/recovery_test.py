@@ -1,4 +1,6 @@
 #!/usr/bin/env python2.7
+import sys
+sys.path.append('../recovery')
 from recovery_handler import RecoveryHandler
 from taskflow import engines
 

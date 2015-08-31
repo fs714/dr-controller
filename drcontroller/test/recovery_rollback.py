@@ -3,9 +3,11 @@ import os
 import hashlib
 from functools import wraps
 from taskflow import engines
-from base import AnsibleTask, ShellTask, LinearFlowCreator, UnorderedFlowCreator
 
 import sys
+sys.path.append('../recovery')
+from base import AnsibleTask, ShellTask, LinearFlowCreator, UnorderedFlowCreator
+
 sys.path.append("../db")
 from db_Dao import DRGlanceDao, DRNovaDao
 
