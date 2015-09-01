@@ -1,15 +1,28 @@
 #!/usr/bin/env python2.7
 import sys
+import ConfigParser
 from sqlalchemy import create_engine
 from sqlalchemy.orm import backref, mapper, relation, sessionmaker
 from models import Base, DRGlance, DRNova, DRNeutron, DRNeutronSubnet
-sys.path.append('/home/eshufan/project/drcontroller/drcontroller/db')
+
+#'数据库类型+数据库驱动名称://用户名:口令@机器地址:端口号/数据库名'
+cf = ConfigParser.ConfigParser()
+cf.read('../conf/db.conf')
+conn_info=cf.get('connection','dbtype')+'://'+\
+                            cf.get('connection','username')+':'+\
+                            cf.get('connection','password')+'@'+\
+                            cf.get('connection','host')+':'+\
+                            cf.get('connection','port')+'/'+\
+                            cf.get('connection','database')
+
+engine = create_engine(conn_info, echo=True)
 
 # create a connection to a sqlite database and turn echo on to see the auto-generated SQL
 #engine = create_engine("sqlite:///dr.db", echo=False)
 
+
 # create a connection to mariadb on host
-engine = create_engine("mysql://root:123456@10.175.150.16:23306/dr", echo=True)
+#engine = create_engine("mysql://root:123456@10.175.150.16:23306/dr", echo=True)
 
 # create a connection to mariadb from other container
 #engine = create_engine("mysql://root:123456@192.168.0.2:13306/dr", echo=True)
