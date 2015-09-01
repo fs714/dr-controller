@@ -7,7 +7,7 @@ from models import Base, DRGlance, DRNova, DRNeutron, DRNeutronSubnet
 
 #'数据库类型+数据库驱动名称://用户名:口令@机器地址:端口号/数据库名'
 cf = ConfigParser.ConfigParser()
-cf.read('../conf/db.conf')
+cf.read('./conf/db.conf')
 conn_info=cf.get('connection','dbtype')+'://'+\
                             cf.get('connection','username')+':'+\
                             cf.get('connection','password')+'@'+\
