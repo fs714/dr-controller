@@ -11,7 +11,9 @@ def start_vm(instance_id):
     drc_ncred['api_key'] = cf.get("drc","password")
     drc_ncred['project_id']=cf.get("drc","tenant_name")
     drc_nova = novaclient.Client(**drc_ncred)
-    drc_nova.servers.start(instance_id)
+    drc_nova.servers.start(instance_id[0])
+    if (instance_id[1] != None)
+        drc_nova.servers.add_floating_ip(instance_id[0],instance_id[1])
 
 def start_vms(instance_ids):
     for instance_id in instance_ids:
