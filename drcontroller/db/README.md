@@ -17,8 +17,8 @@
 
 # The DB operations module
 ##There are five files.
-    * 'db_Dao.py' is the DB operation API.
-    * 'models.py' defines the ORM between Objects and Models, including DRGlance, DRNova, DRNeutron, DRNeutronSubnet.
+    * 'db_Dao.py' is the DB operation API ,includeing DRGlanceDao, DRNovaDao,DRNeutronDao, DRNeutronSubnetDao, DRNeutronPortDao.
+    * 'models.py' defines the ORM between Objects and Models, including DRGlance, DRNova, DRNeutron, DRNeutronSubnet, DRNeutronPort.
     * 'db_test.py' is the a simple DB operations test.
     * 'init_db.py' is used to initial the DB 'dr'.
     * 'drop_db.py' is used to delete all tables of DB 'dr' 
@@ -26,9 +26,9 @@
 ## DB init and drop 
 There is a database named 'dr' in Mariadb.
 
-1. create tables. go into the 'db' dirctory ,and run 'python init_db.py', all tables in 'dr' will be created.
+1. create tables. If you go into the 'db' dirctory ,and run 'python init_db.py', all tables in 'dr' will be created.
 
-2. delete tables. go into the 'db' dirctory, and run 'python init_db.py', all tables in 'dr' will be deleted.
+2. delete tables. If go into the 'db' dirctory, and run 'python init_db.py', all tables in 'dr' will be deleted.
 
 ## DB connection setting, you maybe modify db_Dao.py.
 
@@ -44,8 +44,8 @@ There is a database named 'dr' in Mariadb.
 ## How to use DB module, Take a example for DRGlanceDao
 
 ```
-from db_Dao import DRGlanceDao, DRNovaDao, DRNeutronDao
-from models import DRGlance, DRNova, DRNeutron
+from db_Dao import DRGlanceDao, DRNovaDao, DRNeutronDao, DRNeutronSubnetDao, DRNeutronPortDao
+from models import DRGlance, DRNova, DRNeutron, DRNeutronSubnet, DRNeutronPort
 
 # Create a DB operation dao, such as DRGlanceDao
 baseDao = DRGlanceDao() 

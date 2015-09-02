@@ -279,26 +279,37 @@ class NeutronApp(base_handler.BaseHandler):
             floating_ip_address = message['Response']['floatingip']['floating_ip_address']
             drf_floatingip_id = message['Response']['floatingip']['id']
             drf_port_id = message['Response']['floatingip']['port_id']
-            #
-            # get the secondary port information from DB
-            #
-            dr_neutronPort = neutronPortDao.get_by_primary_uuid(primary_uuid=drf_port_id)
-            drc_port_id = dr_neutronPort.secondary_uuid
             endpoint, auth_token = self.keystone_handle(key_type='drc', service_type='network', endpoint_type='publicURL')
             drc_neutron = neutron_client.Client('2.0', endpoint_url=endpoint, token=auth_token)
-            drc_floatingips = drc_neutron.list_floatingips()
-            for fip in drc_floatingips:
-                if fip.floating_ip_address == floating_ip_address:
-                    drc_floatingip_id = fip.floating_ip_id
-            # this is a ip-associate request
             if floatingip_handle_type == 'associate':
+                drc_floatingips = drc_neutron.list_floatingips()['floatingips']
+                for fip in drc_floatingips:
+                    if fip['floating_ip_address'] == floating_ip_address:
+                        drc_floatingip_id = fip['id']
+                #
+                # get the secondary port information from DB
+                #
+                try:
+                    drc_port_id = neutronPortDao.get_by_primary_uuid(primary_uuid=drf_port_id).secondary_uuid
+                except:
+                    print'Neutron no get "drc_port_id from DB"'
+                    return
                 drc_neutron.update_floatingip(drc_floatingip_id,{"fixed_ip_address":fixed_ip_address,"port_id":drc_port_id})
-            #primary_instance_id = drf_nova.floating_ips.get(floatingip_id).instance_id
-            #novaDao.update_by_primary_instance__uuid(primary_instance_id,{'floating_ip':floating_ip_address})
-            # this is a ip-disassociate request
+                #
+                # update the DB , primary_floatingip_uuid,secondary_floatingip_uuid,floating_ip_address
+                #
+                neutronPortDao.update_by_primary_uuid(drf_port_id,{'primary_floatingip_uuid':drf_floatingip_id,'secondary_floatingip_uuid':drc_floatingip_id,'floating_ip_address':floating_ip_address})
+                #primary_instance_id = drf_nova.floating_ips.get(floatingip_id).instance_id
+                #novaDao.update_by_primary_instance__uuid(primary_instance_id,{'floating_ip':floating_ip_address})
             else:
                 pdb.set_trace()
+                try:
+                    drc_floatingip_id = neutronPortDao.get_by_primary_uuid(primary_uuid=drf_port_id).secondary_floatingip_uuid
+                except:
+                    print 'Neutron no get drc_flatingip_id'
+                    return
                 drc_neutron.update_floatingip(drc_floatingip_id)
+                neutronPortDao.update_by_primary_uuid(drf_port_id,{'primary_floatingip_uuid':'','secondary_floatingip_uuid':'','floating_ip_address':''})
         else:
             print 'NeutronAPP put_handle is Error.'
             return
