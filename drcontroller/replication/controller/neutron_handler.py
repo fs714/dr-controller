@@ -1,10 +1,11 @@
 import logging
 import string, os, sys, time
 import pdb
+import ConfigParser
 from neutronclient.neutron import client as neutron_client
 import base_handler
-from db_Dao import DRNeutronDao, DRNeutronSubnetDao
-from models import Base,DRNeutron, DRNeutronSubnet
+from db_Dao import DRNeutronDao, DRNeutronSubnetDao ,DRNeutronPortDao
+from models import Base,DRNeutron, DRNeutronSubnet, DRNeutronPort
 
 set_conf = "/home/eshufan/projects/drcontroller/drcontroller/conf/set.conf"
 handle_type = "Neutron"
@@ -68,7 +69,7 @@ class NeutronApp(base_handler.BaseHandler):
                 network_params = {'admin_state_up':message['Response']['network']['admin_state_up'],
                                     'name':'_'.join([drf_network_name,'shadow']),
                                     'provider:network_type':message['Response']['network']['provider:network_type'],
-                                   # 'provider:physical_network':message['Response']['network']['provider:physical_network'],
+                                    #'provider:physical_network':message['Response']['network']['provider:physical_network'],
                                     #'provider:segmentation_id': message['Response']['network']['provider:segmentation_id'],
                                     'router:external':message['Response']['network']['router:external'],
                                     'shared':message['Response']['network']['shared']
@@ -92,8 +93,23 @@ class NeutronApp(base_handler.BaseHandler):
             drf_subnet_name = message['Response']['subnet']['name']
             endpoint, auth_token = self.keystone_handle(key_type='drc', service_type='network', endpoint_type='publicURL')
             drc_neutron = neutron_client.Client('2.0', endpoint_url=endpoint, token=auth_token)
-            # get the drc_network_id(secondary_uuid) of secondary site from DB.
-            drc_network_id = neutronDao.get_by_primary_uuid(primary_uuid=drf_network_id).secondary_uuid
+            # get the drc_network_id(secondary_uuid) of secondary site from DB
+            count = 0
+            drc_network_id = None
+            neutron_network = neutronDao.get_by_primary_uuid(primary_uuid=drf_network_id)
+            while neutron_network == None:
+                time.sleep(1)
+                neutron_network = neutronDao.get_by_primary_uuid(primary_uuid=drf_network_id)
+                if neutron_network != None:
+                    drc_network_id = neutron_network.secondary_uuid
+                    break
+                else:
+                    count=count+1
+                if count == 5:
+                    break
+            if drc_network_id == None:
+                print 'Create subnet Error: can not find network in DB'
+                return
             subnet_params ={ 'allocation_pools':message['Response']['subnet']['allocation_pools'],
                              'cidr':message['Response']['subnet']['cidr'],
                              'dns_nameservers':message['Response']['subnet']['dns_nameservers'],
@@ -162,6 +178,7 @@ class NeutronApp(base_handler.BaseHandler):
     def put_handle(self, message):
         neutronDao = DRNeutronDao()
         neutronSubnetDao = DRNeutronSubnetDao()
+        neutronPortDao = DRNeutronPortDao()
         network_type = self.get_network_type(message)
         ##
         ## The request is for network.
@@ -251,7 +268,37 @@ class NeutronApp(base_handler.BaseHandler):
                 drc_neutron.add_interface_router(drc_router_id,{'subnet_id':drc_subnet_id})
             elif interface_handle_type =='remove_router_interface':
                 drc_neutron.remove_interface_router(drc_router_id, {'subnet_id':drc_subnet_id})
-
+        elif network_type == 'floatingips':
+            # judge the handle type by fixed_ip_address is 'None' or not .
+            fixed_ip_address = message['Response']['floatingip']['fixed_ip_address']
+            if fixed_ip_address==None:
+                floatingip_handle_type='associate'
+            else:
+                floatingip_handle_type='disassociate'
+            pdb.set_trace()
+            floating_ip_address = message['Response']['floatingip']['floating_ip_address']
+            drf_floatingip_id = message['Response']['floatingip']['id']
+            drf_port_id = message['Response']['floatingip']['port_id']
+            #
+            # get the secondary port information from DB
+            #
+            dr_neutronPort = neutronPortDao.get_by_primary_uuid(primary_uuid=drf_port_id)
+            drc_port_id = dr_neutronPort.secondary_uuid
+            endpoint, auth_token = self.keystone_handle(key_type='drc', service_type='network', endpoint_type='publicURL')
+            drc_neutron = neutron_client.Client('2.0', endpoint_url=endpoint, token=auth_token)
+            drc_floatingips = drc_neutron.list_floatingips()
+            for fip in drc_floatingips:
+                if fip.floating_ip_address == floating_ip_address:
+                    drc_floatingip_id = fip.floating_ip_id
+            # this is a ip-associate request
+            if floatingip_handle_type == 'associate':
+                drc_neutron.update_floatingip(drc_floatingip_id,{"fixed_ip_address":fixed_ip_address,"port_id":drc_port_id})
+            #primary_instance_id = drf_nova.floating_ips.get(floatingip_id).instance_id
+            #novaDao.update_by_primary_instance__uuid(primary_instance_id,{'floating_ip':floating_ip_address})
+            # this is a ip-disassociate request
+            else:
+                pdb.set_trace()
+                drc_neutron.update_floatingip(drc_floatingip_id)
         else:
             print 'NeutronAPP put_handle is Error.'
             return

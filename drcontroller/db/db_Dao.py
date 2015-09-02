@@ -3,9 +3,8 @@ import sys
 import ConfigParser
 from sqlalchemy import create_engine
 from sqlalchemy.orm import backref, mapper, relation, sessionmaker
-from models import Base, DRGlance, DRNova, DRNeutron, DRNeutronSubnet
+from models import Base, DRGlance, DRNova, DRNeutron, DRNeutronSubnet, DRNeutronPort
 
-#'数据库类型+数据库驱动名称://用户名:口令@机器地址:端口号/数据库名'
 cf = ConfigParser.ConfigParser()
 cf.read('./conf/db.conf')
 conn_info=cf.get('connection','dbtype')+'://'+\
@@ -264,5 +263,8 @@ class DRNeutronSubnetDao(BaseDao):
         session.close()
         return count
 
+class DRNeutronPortDao(BaseDao):
+    def __init__(self):
+        super(DRNeutronPortDao, self).__init__(DRNeutronPort)
 
 
