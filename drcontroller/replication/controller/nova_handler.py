@@ -26,55 +26,6 @@ def change_post_handle(message):
 #    print "drf:", drf_glance_endpoint
     url=message['Request']['url'].split('/')
     server_id=url[len(url)-2]
-    if (message["Request"]["wsgi.input"].has_key("addFloatingIp")):
-            fip = message["Request"]["wsgi.input"]["addFloatingIp"]["address"]
-            drf_net=drf_nova.servers.get(server_id).networks
-            status=str(drf_net).find(fip)
-            count=0
-            while (status== -1):
-                time.sleep(1)
-                drf_net=drf_nova.servers.get(server_id).networks
-                status=status=str(drf_net).find(fip)
-                count+=1
-                if (count==5):
-                    return
-
-            drc_ncred={}
-            drc_ncred['auth_url']= cf.get("drc","auth_url")
-            drc_ncred['username']= cf.get("drc","user")
-            drc_ncred['api_key'] = cf.get("drc","password")
-            drc_ncred['project_id']=cf.get("drc","tenant_name")
-            drc_nova = novaclient.Client(**drc_ncred)
-            try:
-                drc_id = novaDao.get_by_primary_instance_uuid(server_id).secondary_instance_uuid
-            except:
-                return
-            drc_nova.servers.get(drc_id).add_floating_ip(fip)
-
-    if (message["Request"]["wsgi.input"].has_key("removeFloatingIp")):
-            fip = message["Request"]["wsgi.input"]["removeFloatingIp"]["address"]
-            drf_net=drf_nova.servers.get(server_id).networks
-            status=str(drf_net).find(fip)
-            count=0
-            while (status != -1):
-                time.sleep(1)
-                drf_net=drf_nova.servers.get(server_id).networks
-                status=str(drf_net).find(fip)
-                count+=1
-                if (count==5):
-                    return
-
-            drc_ncred={}
-            drc_ncred['auth_url']= cf.get("drc","auth_url")
-            drc_ncred['username']= cf.get("drc","user")
-            drc_ncred['api_key'] = cf.get("drc","password")
-            drc_ncred['project_id']=cf.get("drc","tenant_name")
-            drc_nova = novaclient.Client(**drc_ncred)
-            try:
-                drc_id = novaDao.get_by_primary_instance_uuid(server_id).secondary_instance_uuid
-            except:
-                return
-            drc_nova.servers.get(drc_id).remove_floating_ip(fip)
 
     if (message["Request"]["wsgi.input"].has_key("os-stop")):
             drf_server=drf_nova.servers.get(server_id)
@@ -121,6 +72,7 @@ def post_handle(message):
     novaDao = DRNovaDao()
     glanceDao = DRGlanceDao()
     neutronDao = DRNeutronDao()
+    neutronPortDao = DRNeutronPortDao()
     cf.read("/home/eshufan/projects/drcontroller/drcontroller/conf/set.conf")
     drf_ncred={}
     drf_ncred['auth_url']= cf.get("drf","auth_url")
@@ -133,6 +85,7 @@ def post_handle(message):
     server_id=message['Response']['server']['id']
     status=drf_nova.servers.get(server_id).status
     host_id=drf_nova.servers.get(server_id).to_dict()['OS-EXT-SRV-ATTR:host']
+    port_id=drf_nova.servers.interface_list(server_id)[0].port_id
     while (status == "BUILD" ):
         time.sleep(1)
         status=drf_nova.servers.get(server_id).status
@@ -164,6 +117,7 @@ def post_handle(message):
             )
         status=drc_nova.servers.get(drc_server.id).status
         drc_host_id=drf_nova.servers.get(server_id).to_dict()['OS-EXT-SRV-ATTR:host']
+        drc_port_id=drc_nova.servers.interface_list(drc_server.id)[0].port_id
         novaDao.add(DRNova(primary_instance_uuid=server_id,
                            secondary_instance_uuid=drc_server.id,
                            primary_image_uuid=image_id,
@@ -171,6 +125,9 @@ def post_handle(message):
                            primary_node_name=host_id,
                            secondary_node_name=drc_host_id,
                            status='ACTIVE'))
+        neutronPortDao.add(DRNeutronPort(primary_uuid=port_id,
+                                         secondary_uuid=drc_port_id
+        ))
         while (status == "BUILD" ):
             time.sleep(1)
             status=drc_nova.servers.get(drc_server.id).status
