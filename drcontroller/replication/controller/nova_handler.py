@@ -1,6 +1,6 @@
 #/usr/bin/env python2.7
-from db_Dao import DRGlanceDao, DRNovaDao, DRNeutronDao
-from models import Base, DRGlance, DRNova, DRNeutron
+from db_Dao import DRGlanceDao, DRNovaDao, DRNeutronDao,DRNeutronPortDao
+from models import Base, DRGlance, DRNova, DRNeutron,DRNeutronPort
 import logging
 import pdb
 import time
@@ -84,6 +84,7 @@ def post_handle(message):
     url=message['Request']['url'].split('/')
     server_id=message['Response']['server']['id']
     status=drf_nova.servers.get(server_id).status
+    pdb.set_trace()
     host_id=drf_nova.servers.get(server_id).to_dict()['OS-EXT-SRV-ATTR:host']
     port_id=drf_nova.servers.interface_list(server_id)[0].port_id
     while (status == "BUILD" ):
@@ -117,6 +118,7 @@ def post_handle(message):
             )
         status=drc_nova.servers.get(drc_server.id).status
         drc_host_id=drf_nova.servers.get(server_id).to_dict()['OS-EXT-SRV-ATTR:host']
+        pdb.set_trace()
         drc_port_id=drc_nova.servers.interface_list(drc_server.id)[0].port_id
         novaDao.add(DRNova(primary_instance_uuid=server_id,
                            secondary_instance_uuid=drc_server.id,
