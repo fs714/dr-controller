@@ -84,12 +84,18 @@ def post_handle(message):
     url=message['Request']['url'].split('/')
     server_id=message['Response']['server']['id']
     status=drf_nova.servers.get(server_id).status
-    pdb.set_trace()
     host_id=drf_nova.servers.get(server_id).to_dict()['OS-EXT-SRV-ATTR:host']
-    port_id=drf_nova.servers.interface_list(server_id)[0].port_id
     while (status == "BUILD" ):
         time.sleep(1)
         status=drf_nova.servers.get(server_id).status
+    max_wait_time = 10
+    counter = 0
+    while(len(drf_nova.servers.interface_list(server_id)) == 0):
+        time.sleep(1)
+        if counter > max_wait_time:
+            return
+        counter += 1
+    port_id=drf_nova.servers.interface_list(server_id)[0].port_id
     if (status == "ACTIVE"):
         drc_ncred={}
         drc_ncred['auth_url']= cf.get("drc","auth_url")
@@ -118,7 +124,13 @@ def post_handle(message):
             )
         status=drc_nova.servers.get(drc_server.id).status
         drc_host_id=drf_nova.servers.get(server_id).to_dict()['OS-EXT-SRV-ATTR:host']
-        pdb.set_trace()
+        max_wait_time = 10
+        counter = 0
+        while(len(drc_nova.servers.interface_list(drc_server.id)) == 0):
+            time.sleep(1)
+            if counter > max_wait_time:
+                return
+            counter += 1
         drc_port_id=drc_nova.servers.interface_list(drc_server.id)[0].port_id
         novaDao.add(DRNova(primary_instance_uuid=server_id,
                            secondary_instance_uuid=drc_server.id,

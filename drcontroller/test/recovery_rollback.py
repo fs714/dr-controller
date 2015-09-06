@@ -98,18 +98,6 @@ class ComponentHandler(object):
         drbd = 'openstack' #config
         return ShellTask('%s_connect' % drbd, self.hosts, 'drbdadm -- --discard-my-data connect %s' % drbd)
 
-    @task_list
-    def create_restore_backup_task(self):
-        return ShellTask('%s_fs_restore' % self.component, self.hosts, 'chdir=/var/lib mv %sbak %s' % (self.component, self.component))
-
-    @task_list
-    def create_umount_task(self):
-        return AnsibleTask('%s_fs_umount' % self.component, self.hosts, 'mount', 'src=/dev/%s name=/var/lib/%s fstype=xfs state=unmounted' % (self.disc, self.component))
-
-    @task_list
-    def create_remove_task(self):
-        return ShellTask('%s_fs_remove' % self.component, self.hosts, 'chdir=/var/lib rm -rf %s' % self.component)
-
     def prepare(self):
         self.create_tasks()
         return self.create_flow()
@@ -129,6 +117,18 @@ class GlanceHandler(ComponentHandler):
         super(GlanceHandler, self).__init__('glance', controllers, 'drbd0', result_handler)
         self.db = DRGlanceDao()
         self.drbd_tasks = []
+
+    @task_list
+    def create_restore_backup_task(self):
+        return ShellTask('%s_fs_restore' % self.component, self.hosts, 'chdir=/var/lib mv %sbak %s' % (self.component, self.component))
+
+    @task_list
+    def create_remove_task(self):
+        return ShellTask('%s_fs_remove' % self.component, self.hosts, 'chdir=/var/lib rm -rf %s' % self.component)
+
+    @task_list
+    def create_umount_task(self):
+        return AnsibleTask('%s_fs_umount' % self.component, self.hosts, 'mount', 'src=/dev/%s name=/var/lib/%s fstype=xfs state=unmounted' % (self.disc, self.component))
 
     def create_tasks(self):
         self.create_umount_task(self.disc_tasks)
@@ -153,8 +153,20 @@ class NovaHandler(ComponentHandler):
         self.instance_ids = []
 
     @task_list
+    def create_restore_backup_task(self):
+        return ShellTask('%s_fs_restore' % self.component, self.hosts, 'chdir=/var/lib/%s mv instancesbak instances' % self.component)
+
+    @task_list
+    def create_remove_task(self):
+        return ShellTask('%s_fs_remove' % self.component, self.hosts, 'chdir=/var/lib/%s rm -rf instances' % self.component)
+
+    @task_list
     def create_rebase_task(self, host, instance_uuid_local, base_uuid_local):
         return ShellTask('rebase', host, 'chdir=/var/lib/nova/instances/%s qemu-img -u -b /var/lib/nova/instances/_base/%s disk' % (instance_uuid_local, base_uuid_local))
+
+    @task_list
+    def create_umount_task(self):
+        return AnsibleTask('%s_fs_umount' % self.component, self.hosts, 'mount', 'src=/dev/%s name=/var/lib/%s/instances fstype=xfs state=unmounted' % (self.disc, self.component))
 
     @task_list
     def create_vm_stop_task(self):

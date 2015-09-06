@@ -271,6 +271,6 @@ class DRNeutronPortDao(BaseDao):
         return self.getSession().query(self.table).filter(self.table.primary_floatingip_uuid==primary_floatingip_uuid).first()
 
     def get_ports_associated(self):
-        return self.getSession().query(self.table.secondary_uuid,self.table.secondary_floatingip_uuid).filter(self.table.floating_ip_address.isnot(None)).all()
+        return self.getSession().query(self.table.secondary_uuid,self.table.secondary_floatingip_uuid).filter(self.table.floating_ip_address!=None).all()
 
 
