@@ -6,7 +6,7 @@ from sqlalchemy.orm import backref, mapper, relation, sessionmaker
 from models import Base, DRGlance, DRNova, DRNeutron, DRNeutronSubnet, DRNeutronPort
 
 cf = ConfigParser.ConfigParser()
-cf.read('./conf/db.conf')
+cf.read('/home/eshufan/projects/drcontroller/drcontroller/conf/db.conf')
 conn_info=cf.get('connection','dbtype')+'://'+\
                             cf.get('connection','username')+':'+\
                             cf.get('connection','password')+'@'+\
@@ -266,5 +266,8 @@ class DRNeutronSubnetDao(BaseDao):
 class DRNeutronPortDao(BaseDao):
     def __init__(self):
         super(DRNeutronPortDao, self).__init__(DRNeutronPort)
+
+    def get_primary_prot_uuid_by_primary_floatingip_uuid(self,primary_floatingip_uuid):
+        return self.getSession().query(self.table).filter(self.table.primary_floatingip_uuid==primary_floatingip_uuid).first()
 
 
