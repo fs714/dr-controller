@@ -304,7 +304,7 @@ class NeutronApp(base_handler.BaseHandler):
             elif floatingip_handle_type == 'disassociate':
                 #pdb.set_trace()
                 try:
-                    drf_port_id = neutronPortDao.get_primary_prot_uuid_by_primary_floatingip_uuid(drf_floatingip_id).primary_uuid
+                    drf_port_id = neutronPortDao.get_port_by_primary_floatingip_uuid(drf_floatingip_id).primary_uuid
                 except:
                     print 'floatingip-disassociate:no get drf_port_id'
                     return

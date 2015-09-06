@@ -267,7 +267,10 @@ class DRNeutronPortDao(BaseDao):
     def __init__(self):
         super(DRNeutronPortDao, self).__init__(DRNeutronPort)
 
-    def get_primary_prot_uuid_by_primary_floatingip_uuid(self,primary_floatingip_uuid):
+    def get_port_by_primary_floatingip_uuid(self,primary_floatingip_uuid):
         return self.getSession().query(self.table).filter(self.table.primary_floatingip_uuid==primary_floatingip_uuid).first()
+
+    def get_ports_associated(self):
+        return self.getSession().query(self.table.secondary_uuid,self.table.secondary_floatingip_uuid).filter(self.table.floating_ip_address.isnot(None)).all()
 
 

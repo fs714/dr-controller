@@ -1,6 +1,8 @@
 import novaclient.v1_1.client as novaclient
+import keystoneclient.v2_0.client as keystoneclient
 import argparse
 import ConfigParser
+#from  db_Dao import DRNeutronPortDao
 
 def start_vm(instance_id):
     cf=ConfigParser.ConfigParser()
@@ -11,9 +13,25 @@ def start_vm(instance_id):
     drc_ncred['api_key'] = cf.get("drc","password")
     drc_ncred['project_id']=cf.get("drc","tenant_name")
     drc_nova = novaclient.Client(**drc_ncred)
-    drc_nova.servers.start(instance_id[0])
-    if (instance_id[1] != None)
-        drc_nova.servers.add_floating_ip(instance_id[0],instance_id[1])
+    drc_nova.servers.start(instance_id)
+
+
+def associate_floatingips(ports):
+    '''
+    ports is a list ,[(secondary_port_uuid,secondary_floatingip_uuid),...]
+    you can get 'ports' by get_ports_associated() in DRNeutronPortDao.
+    '''
+    cf = ConfigParser.ConfigParser()
+    cf.read("/home/eshufan/scripts/set.conf")
+    keystone = keystoneclient.Client(auth_url=cf.get("drc","auth_url"),
+                                     username=cf.get("drc","user"),
+                                     password=cf.get("drc","password"),
+                                     tenant_name=cf.get("drc","tenant_name"))
+    endpoint = keystone.service_catalog.url_for(service_type=service_type, endpoint_type=endpoint_type)
+    drc_neutron = neutron_clientClient('2.0', endpoint_url=endpoint, token=keystone.auth_token)
+    for port in ports:
+        drc_neutron.update_floatingip(port[1],{"port_id":port[0]})
+
 
 def start_vms(instance_ids):
     for instance_id in instance_ids:
