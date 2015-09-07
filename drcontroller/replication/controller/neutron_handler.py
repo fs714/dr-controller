@@ -294,13 +294,11 @@ class NeutronApp(base_handler.BaseHandler):
                 except:
                     print'Neutron no get "drc_port_id from DB"'
                     return
-                # drc_neutron.update_floatingip(drc_floatingip_id,{"fixed_ip_address":fixed_ip_address,"port_id":drc_port_id})
+                #drc_neutron.update_floatingip(drc_floatingip_id,{"floatingip":{"port_id":drc_port_id}})
                 #
                 # update the DB , primary_floatingip_uuid,secondary_floatingip_uuid,floating_ip_address
                 #
                 neutronPortDao.update_by_primary_uuid(drf_port_id,{'primary_floatingip_uuid':drf_floatingip_id,'secondary_floatingip_uuid':drc_floatingip_id,'floating_ip_address':floating_ip_address})
-                #primary_instance_id = drf_nova.floating_ips.get(floatingip_id).instance_id
-                #novaDao.update_by_primary_instance__uuid(primary_instance_id,{'floating_ip':floating_ip_address})
             elif floatingip_handle_type == 'disassociate':
                 #pdb.set_trace()
                 try:

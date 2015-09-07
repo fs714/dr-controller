@@ -31,8 +31,7 @@ def associate_floatingips(ports):
     endpoint = keystone.service_catalog.url_for(service_type='network', endpoint_type='publicURL')
     drc_neutron = neutron_client.Client('2.0', endpoint_url=endpoint, token=keystone.auth_token)
     for (port, floating_ip) in ports:
-        print('--- ' + port + ' --- ' + floating_ip)
-        drc_neutron.update_floatingip(floating_ip, {"port_id":port})
+        drc_neutron.update_floatingip(floating_ip, {"floatingip":{"port_id":port}})
 
 
 def start_vms(instance_ids):
