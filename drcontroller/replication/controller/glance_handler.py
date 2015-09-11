@@ -1,6 +1,6 @@
 #/usr/bin/env python2.7
-from db_Dao import DRGlanceDao, DRNovaDao, DRNeutronDao
-from models import Base, DRGlance, DRNova, DRNeutron
+from db_Dao import DRGlanceDao, DRNovaDao
+from models import Base, DRGlance, DRNova
 import logging
 import pdb
 import time
@@ -24,6 +24,7 @@ def post_handle(message):
                                                    endpoint_type='publicURL')
     drf_glance = glanceclient.Client('1',drf_glance_endpoint, token=drf_keystone.auth_token)
 #    print "drf:", drf_glance_endpoint
+#    pdb.set_trace()
     image_id=message['Response']['image']['id']
     status=drf_glance.images.get(image_id).status
     count=0
@@ -38,7 +39,7 @@ def post_handle(message):
             break
         status=drf_glance.images.get(image_id).status
     if status == 'active':
-        url='http://192.168.0.2:10090/images/'+image_id
+        new_data=drf_glance.images.data(image_id)._resp
         drc_keystone = keystoneclient.Client(auth_url=cf.get("drc","auth_url"),
                            username= cf.get("drc","user"),
                            password= cf.get("drc","password"),
@@ -54,9 +55,7 @@ def post_handle(message):
                                  protected = str(message['Response']['image']['protected']),
                                  is_public = str( message['Response']['image']['is_public']),
                                  owner = message['Response']['image']['owner'],
-                                 copy_from = url ,
-                                 size=message['Response']['image']['size']                 )
-#        print "drc:",drc_glance_endpoint
+                                 data = new_data                )
         glanceDao.add(DRGlance(primary_uuid=image_id,secondary_uuid=image.id,status='active'))
         errlogger.info("#####################################################")
         errlogger.info(image_id)
@@ -134,7 +133,7 @@ def put_handle(message):
                break
             status=drf_glance.images.get(image_id).status
         if status == 'active':
-            url='http://192.168.0.2:10090/images/'+image_id
+            new_data=drf_glance.images.data(image_id)._resp
             drc_keystone = keystoneclient.Client(auth_url=cf.get("drc","auth_url"),
                            username= cf.get("drc","user"),
                            password= cf.get("drc","password"),
@@ -150,8 +149,7 @@ def put_handle(message):
                                  protected = str(message['Response']['image']['protected']),
                                  is_public = str( message['Response']['image']['is_public']),
                                  owner = message['Response']['image']['owner'],
-                                 copy_from = url ,
-                                 size=message['Response']['image']['size'])
+                                 data = new_data )
             glanceDao.delete_by_primary_uuid(image_id)
             glanceDao.add(DRGlance(primary_uuid=image_id,secondary_uuid=image.id,status='active'))
 
