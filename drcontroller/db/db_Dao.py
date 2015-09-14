@@ -3,7 +3,7 @@ import sys
 import ConfigParser
 from sqlalchemy import create_engine
 from sqlalchemy.orm import backref, mapper, relation, sessionmaker
-from models import Base, DRGlance, DRNova, DRNeutron, DRNeutronSubnet, DRNeutronPort
+from models import Base, DRGlance, DRNova, DRNeutronNet, DRNeutronSubnet, DRNeutronPort, DRNeutronRouter
 
 cf = ConfigParser.ConfigParser()
 cf.read('/home/eshufan/projects/drcontroller/drcontroller/conf/db.conf')
@@ -49,7 +49,7 @@ class BaseDao(object):
         '''
         Add one object.
 
-        one_object: a instance object of DRGlance, DRNova or DRNeutron
+        one_object: a instance object .
         '''
         session = self.getSession()
         session.add(one_object)
@@ -156,6 +156,18 @@ class DRNovaDao(BaseDao):
     def __init__(self):
         super(DRNovaDao, self).__init__(DRNova)
 
+    def add_instance_ports(self, one_object):
+        '''
+        Add one object.
+
+        one_object: a instance object .
+        '''
+        session = self.getSession()
+        session.add(one_object)
+        session.commit()
+        session.close()
+        return 1
+
     def get_all_uuids_node(self):
         '''
         Get all Nova information.
@@ -178,9 +190,10 @@ class DRNovaDao(BaseDao):
         '''
         return self.getSession().query(self.table).filter(self.table.primary_instance_uuid==primary_instance_uuid).first()
 
+
     def get_mult_by_primary_instance_uuids(self, primary_instance_uuid_list):
         '''
-        Get multiple objects by primary_uuids
+        Get multiple Nova objects by primary_uuids
 
         primary_uuid_list: a list of primary_uuids selected
         '''
@@ -189,9 +202,9 @@ class DRNovaDao(BaseDao):
 
     def update_by_primary_instance__uuid(self, primary_instance_uuid, pdict, *args, **kwargs):
         '''
-        Update Nova  by kwargs.
+        Update Nova  by pdict.
 
-        kwargs: keyword args represent the items need to be updated
+        pdict: dict args represent the items need to be updated
         '''
         session = self.getSession()
         update_object = session.query(self.table).filter(self.table.primary_instance_uuid == primary_instance_uuid).first()
@@ -230,10 +243,10 @@ class DRNovaDao(BaseDao):
         session.close()
         return count
 
-class DRNeutronDao(BaseDao):
+class DRNeutronNetDao(BaseDao):
 
     def __init__(self):
-        super(DRNeutronDao, self).__init__(DRNeutron)
+        super(DRNeutronNetDao, self).__init__(DRNeutronNet)
 
 class DRNeutronSubnetDao(BaseDao):
     def __init__(self):
@@ -250,8 +263,9 @@ class DRNeutronSubnetDao(BaseDao):
 
     def delete_subnets_by_network_id(self, network_id):
         '''
-        Delete all subnets.
+        Delete all subnets by network_id.
 
+        network_id: network id .
         '''
         count = 0
         session = self.getSession()
@@ -271,6 +285,8 @@ class DRNeutronPortDao(BaseDao):
         return self.getSession().query(self.table).filter(self.table.primary_floatingip_uuid==primary_floatingip_uuid).first()
 
     def get_ports_associated(self):
-        return self.getSession().query(self.table.secondary_uuid,self.table.secondary_floatingip_uuid).filter(self.table.floating_ip_address!=None).all()
+        return self.getSession().query(self.table.secondary_uuid,self.table.secondary_floatingip_uuid).filter(self.table.primary_floating_ip_address!=None).all()
 
-
+class DRNeutronRouterDao(BaseDao):
+    def __init__(self):
+        super(DRNeutronRouterDao, self).__init__(DRNeutronRouter)

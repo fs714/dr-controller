@@ -1,6 +1,6 @@
 #/usr/bin/env python2.7
-from db_Dao import DRGlanceDao, DRNovaDao, DRNeutronDao,DRNeutronPortDao
-from models import Base, DRGlance, DRNova, DRNeutron,DRNeutronPort
+from db_Dao import DRGlanceDao, DRNovaDao, DRNeutronNetDao,DRNeutronPortDao
+from models import Base, DRGlance, DRNova, DRNeutronNet,DRNeutronPort
 import logging
 import pdb
 import time
@@ -71,7 +71,7 @@ def post_handle(message):
     cf=ConfigParser.ConfigParser()
     novaDao = DRNovaDao()
     glanceDao = DRGlanceDao()
-    neutronDao = DRNeutronDao()
+    neutronNetDao = DRNeutronNetDao()
     neutronPortDao = DRNeutronPortDao()
     cf.read("/home/eshufan/projects/drcontroller/drcontroller/conf/set.conf")
     drf_ncred={}
@@ -106,7 +106,7 @@ def post_handle(message):
         image_id = message['Request']['wsgi.input']['server']['imageRef']
         net_id = message['Request']['wsgi.input']['server']['networks'][0]['uuid']
         drc_image = glanceDao.get_by_primary_uuid(image_id).secondary_uuid
-        drc_net = neutronDao.get_by_primary_uuid(net_id).secondary_uuid
+        drc_net = neutronNetDao.get_by_primary_uuid(net_id).secondary_uuid
         if (message['Request']['wsgi.input']['server'].has_key('networks')):
             drc_server=drc_nova.servers.create(name=message['Request']['wsgi.input']['server']['name']+"_shadow",
                                     image=drc_image,
@@ -132,16 +132,19 @@ def post_handle(message):
                 return
             counter += 1
         drc_port_id=drc_nova.servers.interface_list(drc_server.id)[0].port_id
-        novaDao.add(DRNova(primary_instance_uuid=server_id,
-                           secondary_instance_uuid=drc_server.id,
-                           primary_image_uuid=image_id,
-                           secondary_image_uuid=drc_image,
-                           primary_node_name=host_id,
-                           secondary_node_name=drc_host_id,
-                           status='ACTIVE'))
-        neutronPortDao.add(DRNeutronPort(primary_uuid=port_id,
-                                         secondary_uuid=drc_port_id
-        ))
+        port=DRNeutronPort(primary_uuid=port_id, secondary_uuid=drc_port_id)
+        nova= DRNova(primary_instance_uuid=server_id,
+                     secondary_instance_uuid=drc_server.id,
+                     primary_image_uuid=image_id,
+                     secondary_image_uuid=drc_image,
+                     primary_node_name=host_id,
+                     secondary_node_name=drc_host_id,
+                     status='ACTIVE')
+        nova.ports.append(port)
+        novaDao.add(nova)
+        #neutronPortDao.add(DRNeutronPort(primary_uuid=port_id,
+        #                                 secondary_uuid=drc_port_id
+        #))
         while (status == "BUILD" ):
             time.sleep(1)
             status=drc_nova.servers.get(drc_server.id).status

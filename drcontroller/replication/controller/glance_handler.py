@@ -26,18 +26,23 @@ def post_handle(message):
 #    print "drf:", drf_glance_endpoint
 #    pdb.set_trace()
     image_id=message['Response']['image']['id']
-    status=drf_glance.images.get(image_id).status
-    count=0
-    while (status != 'active')  and (status != 'killed'):
-        time.sleep(1)
-        if status == 'queued':
-            count +=1
-        else:
-            count = 0
-        if  count == 5:
-            glanceDao.add(DRGlance(primary_uuid=image_id,status='queued'))
-            break
-        status=drf_glance.images.get(image_id).status
+    status = message['Response']['image']['status']
+#   status=drf_glance.images.get(image_id).status
+#    count=0
+#    while (status != 'active')  and (status != 'killed'):
+#        time.sleep(1)
+#        if status == 'queued':
+#            count +=1
+#        else:
+#            count = 0
+#        if  count == 5:
+#            glanceDao.add(DRGlance(primary_uuid=image_id,status='queued'))
+#            break
+#        status=drf_glance.images.get(image_id).status
+
+
+    if status == 'queued':
+       glanceDao.add(DRGlance(primary_uuid=image_id,status='queued'))
     if status == 'active':
         new_data=drf_glance.images.data(image_id)._resp
         drc_keystone = keystoneclient.Client(auth_url=cf.get("drc","auth_url"),
@@ -121,17 +126,18 @@ def put_handle(message):
         drf_glance_endpoint = drf_keystone.service_catalog.url_for(service_type='image',
                                                    endpoint_type='publicURL')
         drf_glance = glanceclient.Client('1',drf_glance_endpoint, token=drf_keystone.auth_token)
-        status=drf_glance.images.get(image_id).status
-        count=0
-        while (status != 'active')  and (status != 'killed'):
-            time.sleep(1)
-            if status == 'queued':
-               count +=1
-            else:
-               count = 0
-            if  count == 5:
-               break
-            status=drf_glance.images.get(image_id).status
+#        status=drf_glance.images.get(image_id).status
+#        count=0
+#        while (status != 'active')  and (status != 'killed'):
+#            time.sleep(1)
+#            if status == 'queued':
+#               count +=1
+#            else:
+#               count = 0
+#            if  count == 5:
+#               break
+#            status=drf_glance.images.get(image_id).status
+        status=message['Response']['image']['status']
         if status == 'active':
             new_data=drf_glance.images.data(image_id)._resp
             drc_keystone = keystoneclient.Client(auth_url=cf.get("drc","auth_url"),
@@ -153,7 +159,7 @@ def put_handle(message):
             glanceDao.delete_by_primary_uuid(image_id)
             glanceDao.add(DRGlance(primary_uuid=image_id,secondary_uuid=image.id,status='active'))
 
-    else:
+    if gl_status=='active':
         try:
             drc_id = glanceDao.get_by_primary_uuid(image_id).secondary_uuid
         except:
