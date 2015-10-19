@@ -307,13 +307,15 @@ class NeutronApp(base_handler.BaseHandler):
             # ROUTER:router-interface-add/remove
             if len(url)==7:
                 interface_handle_type = url[-1].split('.')[0]
-                #drf_router_id = message['Response']['id']
-                drf_router_id = '79811a02-05a1-4df3-b62e-df88a271cd01'
+                drf_router_id = message['Response']['id']
+                #drf_router_id = '79811a02-05a1-4df3-b62e-df88a271cd01'
+                drf_subnet_id = message['Response']['subnet_id']
                 #
                 # get subnet_id(subnet_ids) from DB
                 #
                 drc_subnet_id = neutronSubnetDao.get_by_primary_uuid(drf_subnet_id).secondary_uuid
-                drc_router_id = '35735fea-2971-47a4-b8e4-a8f65d3bea98'
+                #drc_router_id = '35735fea-2971-47a4-b8e4-a8f65d3bea98'
+                drc_router_id = neutronRouterDao.get_by_primary_uuid(drf_router_id).secondary_uuid
                 endpoint, auth_token = self.keystone_handle(key_type='drc', service_type='network', endpoint_type='publicURL')
                 drc_neutron = neutron_client.Client('2.0', endpoint_url=endpoint, token=auth_token)
                 #
