@@ -1,6 +1,6 @@
 #/usr/bin/env python2.7
-from db_Dao import DRGlanceDao, DRNovaDao
-from models import Base, DRGlance, DRNova
+from db.db_Dao import DRGlanceDao, DRNovaDao
+from db.models import Base, DRGlance, DRNova
 import logging
 import pdb
 import time

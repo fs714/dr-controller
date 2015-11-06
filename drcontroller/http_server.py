@@ -4,7 +4,6 @@ import commands
 from eventlet import wsgi
 from paste.deploy import loadapp
 import sys
-sys.path.append("./db")
 
 # Monkey patch socket, time, select, threads
 eventlet.patcher.monkey_patch(all=False, socket=True, time=True,

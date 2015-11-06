@@ -4,10 +4,7 @@ import hashlib
 from functools import wraps
 from taskflow import engines
 from base import AnsibleTask, ShellTask, LinearFlowCreator, UnorderedFlowCreator
-
-import sys
-sys.path.append("../db")
-from db_Dao import DRGlanceDao, DRNovaDao, DRNeutronPortDao
+from db.db_Dao import DRGlanceDao, DRNovaDao, DRNeutronPortDao
 from nova_start_vm import start_vms, associate_floatingips
 
 def task_list(fn):
