@@ -25,7 +25,7 @@ def heartbeat():
             #     logger.info('Primary site is still down')
         if current_cnt == times_to_check:
             if previous_cnt < times_to_check:
-                logger.info('Primary site is restored')
+                logger.info('Primary site is up')
             # else:
             #     logger.info('Primary site is OK')
 

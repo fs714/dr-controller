@@ -34,6 +34,7 @@ class RecoveryHandler(object):
         start_vms(self.nova_handler.instance_ids)
         neutron_port_db = DRNeutronPortDao()
         associate_floatingips(neutron_port_db.get_ports_associated())
+        self.logger.info("Secondary site is active")
         return ['Hello Recovery']
 
     def prepare(self):
