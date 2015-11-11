@@ -1,8 +1,9 @@
 import os
 import time
-
+import logging
 
 def heartbeat():
+    logger = logging.getLogger('Heartbeat')
     hostname = '10.175.150.15'
     times_to_check = 3
     previous_cnt = times_to_check
@@ -18,13 +19,13 @@ def heartbeat():
 
         if current_cnt == 0:
             if previous_cnt > 0:
-                print('Primary site is down')
+                logger.info('Primary site is down')
             # else:
-            #     print('Primary site is still down')
+            #     logger.info('Primary site is still down')
         if current_cnt == times_to_check:
             if previous_cnt < times_to_check:
-                print('Primary site is restored')
+                logger.info('Primary site is restored')
             # else:
-            #     print('Primary site is OK')
+            #     logger.info('Primary site is OK')
 
         previous_cnt = current_cnt

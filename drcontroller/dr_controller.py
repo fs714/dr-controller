@@ -2,7 +2,8 @@ import webob.dec
 import routes
 import routes.middleware
 import logging
-import logging.config
+import os
+import sys
 from wsgi_util import RoutesMiddleware
 from replication.controller.nova_handler import NovaHandler
 from replication.controller.neutron_handler import NeutronHandler
@@ -18,7 +19,6 @@ class DrController(object):
     def __init__(self, global_conf, local_conf):
         self.global_conf = global_conf
         self.local_conf = local_conf
-        logging.config.fileConfig("./conf/logging.conf")
         self.logger = logging.getLogger("DrController")
         self.logger.info("Init DrController")
 

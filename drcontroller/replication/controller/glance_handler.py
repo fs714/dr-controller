@@ -13,7 +13,7 @@ import re
 
 def post_handle(message):
     cf=ConfigParser.ConfigParser()
-    errlogger = logging.getLogger("GlanceHandler:accept")
+    logger = logging.getLogger("GlanceHandler")
     glanceDao = DRGlanceDao()
     cf.read("/home/eshufan/projects/drcontroller/drcontroller/conf/set.conf")
     drf_keystone = keystoneclient.Client(auth_url=cf.get("drf","auth_url"),
@@ -27,6 +27,7 @@ def post_handle(message):
 #    pdb.set_trace()
     image_id=message['Response']['image']['id']
     status = message['Response']['image']['status']
+    logger.info('Create shadow image for '+ image_id + ' in dr site')
 #   status=drf_glance.images.get(image_id).status
 #    count=0
 #    while (status != 'active')  and (status != 'killed'):
@@ -62,13 +63,11 @@ def post_handle(message):
                                  owner = message['Response']['image']['owner'],
                                  data = new_data                )
         glanceDao.add(DRGlance(primary_uuid=image_id,secondary_uuid=image.id,status='active'))
-        errlogger.info("#####################################################")
-        errlogger.info(image_id)
-        errlogger.info(glanceDao.get_by_primary_uuid(image_id).secondary_uuid)
+        logger.info('Shadow image ' + image.id + ' created for ' + image_id)
 
 def delete_handle(message):
     glanceDao = DRGlanceDao()
-    errlog = logging.getLogger("GlanceHandler:accept")
+    logger = logging.getLogger("GlanceHandler")
     url=message['Request']['url'].split('/')
     image_id=url[len(url)-1]
     cf=ConfigParser.ConfigParser()
@@ -96,6 +95,8 @@ def delete_handle(message):
 #        status=drf_glance.images.get(image_id).status
 #    if status == 'deleted':
 
+    logger.info('Delete shadow image for '+ image_id + ' in dr site')
+
     drc_keystone = keystoneclient.Client(auth_url=cf.get("drc","auth_url"),
                            username= cf.get("drc","user"),
                            password= cf.get("drc","password"),
@@ -106,6 +107,7 @@ def delete_handle(message):
     if (drc_id != None):
         drc_glance.images.delete(drc_id)
         glanceDao.delete_by_primary_uuid(image_id)
+    logger.info('Shadow image ' + drc_id + ' deleted for ' + image_id)
 
 
 def put_handle(message):
@@ -183,7 +185,7 @@ def put_handle(message):
                                  )
 
 def test():
-    changelog = logging.getLogger("GlanceHandler:accept")
+    changelog = logging.getLogger("GlanceHandler")
     changelog.info("testhandle")
     novaDao = DRNovaDao(DRNova)
     changelog.info(novaDao.get_by_primary_uuid("test").secondary_uuid)
@@ -195,7 +197,7 @@ class GlanceHandler(object):
         self.logger.info('Init GlanceHandler')
 
     def accept(self, *req, **kwargs):
-        self.logger = logging.getLogger("GlanceHandler:accept")
+        self.logger.info("Glance request accept")
         if len(req)>0:
            for i in range(0,len(req)):
                if req[i] != {}:
@@ -217,5 +219,4 @@ class GlanceHandler(object):
                         match = pattern.match(message['Request']['url'])
                         if match:
                             put_handle(message)
-        self.logger.info("--- Hello Glance ---")
         return ['Hello Glance']

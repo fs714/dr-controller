@@ -1,5 +1,4 @@
 import logging
-import logging.config
 import json
 import re
 from webob import Request
@@ -13,7 +12,6 @@ def url_recorder_factory(global_conf, **local_conf):
 
 class UrlRecorder(object):
     def __init__(self, app, global_conf, local_conf):
-        logging.config.fileConfig("./conf/logging.conf")
         self.logger = logging.getLogger("UrlRecorder")
         self.app = app
 
@@ -37,9 +35,9 @@ class UrlRecorder(object):
                 if self.has_object_address(str(value)):
                     del env[name]
         env['wsgi.input'] = req.json
-        self.logger.info('--------------------------------')
-        self.logger.info(json.dumps(env, indent=4, sort_keys=True))
-        self.logger.info('--------------------------------')
+        self.logger.debug('--------------------------------')
+        self.logger.debug(json.dumps(env, indent=4, sort_keys=True))
+        self.logger.debug('--------------------------------')
         return env
 
     def has_object_address(self, value):

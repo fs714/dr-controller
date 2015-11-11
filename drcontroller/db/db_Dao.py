@@ -14,7 +14,7 @@ conn_info=cf.get('connection','dbtype')+'://'+\
                             cf.get('connection','port')+'/'+\
                             cf.get('connection','database')
 
-engine = create_engine(conn_info, echo=True)
+engine = create_engine(conn_info, echo=False)
 
 # create a connection to a sqlite database and turn echo on to see the auto-generated SQL
 #engine = create_engine("sqlite:///dr.db", echo=False)

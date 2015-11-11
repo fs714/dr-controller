@@ -15,6 +15,7 @@ class NeutronApp(base_handler.BaseHandler):
     def __init__(self, set_conf, handle_type):
         super(NeutronApp, self).__init__(set_conf)
         self.handle_type = handle_type
+        self.logger = logging.getLogger("NeutronHandler")
 
     def get_network_type(self, message):
         '''
@@ -53,6 +54,7 @@ class NeutronApp(base_handler.BaseHandler):
             drf_neutron = neutron_client.Client('2.0',endpoint_url=endpoint, token=auth_token)
             drf_network_id = message['Response']['network']['id']
             drf_network_name = message['Response']['network']['name']
+            self.logger.info('Create shadow network for '+ drf_network_id + ' in dr site')
             ##
             ## Get the status of network looply, until it is 'active' or 'down'.
             ##
@@ -83,6 +85,7 @@ class NeutronApp(base_handler.BaseHandler):
                 ## Add the mapping information : <drf_network_id, drc_network_id, status> to DB
                 ##
                 neutronNetDao.add(DRNeutronNet(primary_uuid=drf_network_id, secondary_uuid=drc_network_id, status=status, deleted_flag='0'))
+                self.logger.info('Shadow network ' + drc_network_id + ' created for '+ drf_network_id + ' in dr site')
         ##
         ## The request is for subnet
         ##
@@ -93,6 +96,7 @@ class NeutronApp(base_handler.BaseHandler):
             drf_network_id = message['Response']['subnet']['network_id']
             drf_subnet_id = message['Response']['subnet']['id']
             drf_subnet_name = message['Response']['subnet']['name']
+            self.logger.info('Create shadow subnet for '+ drf_subnet_id + ' in dr site')
             endpoint, auth_token = self.keystone_handle(key_type='drc', service_type='network', endpoint_type='publicURL')
             drc_neutron = neutron_client.Client('2.0', endpoint_url=endpoint, token=auth_token)
             # get the drc_network_id(secondary_uuid) of secondary site from DB
@@ -134,6 +138,7 @@ class NeutronApp(base_handler.BaseHandler):
                                                  secondary_uuid=drc_subnet_id,
                                                  deleted_flag='0',
                                                  other='other'))
+            self.logger.info('Shadow subnet ' + drc_subnet_id + ' created for '+ drf_subnet_id + ' in dr site')
         elif network_type == 'routers':
             #pdb.set_trace()
             drf_router_name = message['Response']['router']['name']
@@ -143,6 +148,7 @@ class NeutronApp(base_handler.BaseHandler):
             drf_external_gateway_info=message['Response']['router']['external_gateway_info']
             if drf_external_gateway_info!=None:
                 set_external_gateway=True
+            self.logger.info('Create shadow router for ' + drf_router_id + ' in dr site')
             endpoint, auth_token = self.keystone_handle(key_type='drc', service_type='network', endpoint_type='publicURL')
             drc_neutron = neutron_client.Client('2.0', endpoint_url=endpoint, token=auth_token)
             router_params={'name':'_'.join([drf_router_name,'shadow']),
@@ -157,6 +163,7 @@ class NeutronApp(base_handler.BaseHandler):
             neutronRouterDao.add(DRNeutronRouter(primary_uuid=drf_router_id,
                                           secondary_uuid=drc_router_id,
                                           other='other'))
+            self.logger.info('Shadow router ' + drc_router_id + ' created for '+ drf_router_id + ' in dr site')
 
 
         else:
@@ -164,7 +171,6 @@ class NeutronApp(base_handler.BaseHandler):
             return
 
     def delete_handle(self,message):
-        errlog = logging.getLogger("NeutronHandler:accept")
         neutronNetDao = DRNeutronNetDao()
         neutronSubnetDao = DRNeutronSubnetDao()
         neutronRouterDao = DRNeutronRouterDao()
@@ -190,6 +196,7 @@ class NeutronApp(base_handler.BaseHandler):
                 neutronSubnets = neutronSubnetDao.get_subnets_by_network_id(network_secondary_uuid)
                 neutronNetDao.delete_by_primary_uuid(network_primary_uuid)
                 neutronSubnetDao.delete_subnets_by_network_id(network_secondary_uuid)
+                self.logger.info('Delete shadow network ' + network_secondary_uuid + ' for ' + network_primary_uuid + ' in dr site')
         ##
         ## The request is for subnet.
         ##
@@ -206,6 +213,7 @@ class NeutronApp(base_handler.BaseHandler):
             ## delete this subnet from table dr_neutron_subnet
             ##
             neutronSubnetDao.delete_by_primary_uuid(subnet_primary_uuid)
+            self.logger.info('Delete shadow subnet ' + subnet_secondary_uuid + ' for ' + subnet_primary_uuid + ' in dr site')
         elif network_type == 'routers':
             #pdb.set_trace()
             drf_router_uuid = uuid
@@ -221,6 +229,7 @@ class NeutronApp(base_handler.BaseHandler):
             ##
             drc_neutron.delete_router(drc_router_uuid)
             neutronRouterDao.delete_by_primary_uuid(drf_router_uuid)
+            self.logger.info('Delete shadow router ' + drc_router_uuid + ' for ' + drf_router_uuid + ' in dr site')
 
         else:
             print 'ERROR:Neutron_handle delete_handle unknown handle type.'
@@ -271,6 +280,7 @@ class NeutronApp(base_handler.BaseHandler):
                                  }
 
                 drc_neutron.update_network(drc_network_uuid,{'network': network_params})
+                self.logger.info('Update network ' + drc_network_uuid + ' in dr site according to ' + drf_network_uuid)
             ##
             ## the network status is down, so update status of the network-shadow to 'down' in secondary site.
             ##
@@ -301,6 +311,7 @@ class NeutronApp(base_handler.BaseHandler):
                              }
             # update the subnet-shadow
             drc_neutron.update_subnet(drc_subnet_uuid, {'subnet':subnet_params})
+            self.logger.info('Update subnet ' + drc_subnet_uuid + ' in dr site according to ' + drf_subnet_uuid)
         elif network_type == 'routers':
             #pdb.set_trace()
             url = message['Request']['url'].split('/')
@@ -323,8 +334,10 @@ class NeutronApp(base_handler.BaseHandler):
                 #
                 if interface_handle_type == 'add_router_interface':
                     drc_neutron.add_interface_router(drc_router_id,{'subnet_id':drc_subnet_id})
+                    self.logger.info('Add subnet ' + drc_subnet_id + ' to router ' + drc_router_id + ' in dr site according to ' + drf_router_id)
                 elif interface_handle_type =='remove_router_interface':
                     drc_neutron.remove_interface_router(drc_router_id, {'subnet_id':drc_subnet_id})
+                    self.logger.info('Remove subnet ' + drc_subnet_id + ' from router ' + drc_router_id + ' in dr site according to ' + drf_router_id)
             # ROUTER:gateway-set /gateway-clear ,router-update
             elif len(url)==6:
                 is_router_update=False
@@ -357,8 +370,10 @@ class NeutronApp(base_handler.BaseHandler):
                         drc_neutron = neutron_client.Client('2.0', endpoint_url=endpoint, token=auth_token)
                         if gateway_handle_type=='gateway-set':
                             drc_neutron.add_gateway_router(drc_router_id,{'network_id':drc_ext_net_id})
+                            self.logger.info('Set gateway for router ' + drc_router_id + ' in dr site according to ' + drf_router_id)
                         elif gateway_handle_type=='gateway-clear':
                             drc_neutron.remove_gateway_router(drc_router_id)
+                            self.logger.info('Clear gateway for router ' + drc_router_id + ' in dr site according to ' + drf_router_id)
             else:
                 print 'ERROR:PUT->Router:unknown handle type of router.'
                 return
@@ -397,6 +412,7 @@ class NeutronApp(base_handler.BaseHandler):
                                                                    'secondary_floatingip_uuid':drc_floatingip_id,
                                                                    'primary_floating_ip_address':drf_floating_ip_address,
                                                                    'secondary_floating_ip_address':drc_floating_ip_address})
+                self.logger.info('Record floating IP information in database: ' + drf_floating_ip_address + ' : ' + drc_floating_ip_address)
             elif floatingip_handle_type == 'disassociate':
                 #pdb.set_trace()
                 try:
@@ -406,6 +422,7 @@ class NeutronApp(base_handler.BaseHandler):
                     return
                 #drc_neutron.update_floatingip(drc_floatingip_id)
                 neutronPortDao.update_by_primary_uuid(drf_port_id,{'primary_floatingip_uuid':None,'secondary_floatingip_uuid':None,'primary_floating_ip_address':None,'secondary_floating_ip_address':None})
+                self.logger.info('Remove floating IP information in database: ' + drf_port_id)
         else:
             print 'NeutronAPP put_handle is Error.'
             return
@@ -415,9 +432,10 @@ class NeutronApp(base_handler.BaseHandler):
 class NeutronHandler(object):
     def __init__(self):
         self.neutron_app = NeutronApp(set_conf, handle_type)
+        self.logger = logging.getLogger("NeutronHandler")
 
     def accept(self, *req, **kwargs):
-        self.logger = logging.getLogger("NeutronHandler:accept")
+        self.logger.info("Neutron request accept")
         if len(req)>0:
            for i in range(0,len(req)):
                if req[i] != {}:
@@ -433,5 +451,4 @@ class NeutronHandler(object):
                      elif message['Request']['type'] == 'PUT':
                         self.neutron_app.put_handle(message)
                         print 'put'
-        self.logger.info("--- Hello Neutron ---")
         return ['Hello Neutron']

@@ -1,4 +1,3 @@
-import logging
 import string, os, sys, time
 import keystoneclient.v2_0.client as keystoneclient
 import ConfigParser

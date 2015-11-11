@@ -12,8 +12,7 @@ import string,os,sys
 import re
 
 def change_post_handle(message):
-    changelog = logging.getLogger("NovaHandler:accept")
-    changelog.info("change_post_handle")
+    logger = logging.getLogger("NovaHandler")
     cf=ConfigParser.ConfigParser()
     novaDao = DRNovaDao()
     cf.read("/home/eshufan/projects/drcontroller/drcontroller/conf/set.conf")
@@ -26,6 +25,7 @@ def change_post_handle(message):
 #    print "drf:", drf_glance_endpoint
     url=message['Request']['url'].split('/')
     server_id=url[len(url)-2]
+    logger.info('Update VM status for ' + server_id + ' in primary site')
 
     if (message["Request"]["wsgi.input"].has_key("os-stop")):
             drf_server=drf_nova.servers.get(server_id)
@@ -42,8 +42,8 @@ def change_post_handle(message):
                     return
             try:
                 novaDao.update_by_primary_instance__uuid(server_id,{"status":"SHUTOFF"})
-                changelog.info(server_id)
-                changelog.info(novaDao.get_by_primary_instance_uuid(server_id).status)
+                logger.debug(server_id)
+                logger.debug(novaDao.get_by_primary_instance_uuid(server_id).status)
             except:
                 return
 
@@ -62,12 +62,13 @@ def change_post_handle(message):
                     return
             try:
                 novaDao.update_by_primary_instance__uuid(server_id,{"status":"ACTIVE"})
-                changelog.info(server_id)
-                changelog.info(novaDao.get_by_primary_instance_uuid(server_id).status)
+                logger.debug(server_id)
+                logger.debug(novaDao.get_by_primary_instance_uuid(server_id).status)
             except:
                 return
 
 def post_handle(message):
+    logger = logging.getLogger("NovaHandler")
     cf=ConfigParser.ConfigParser()
     novaDao = DRNovaDao()
     glanceDao = DRGlanceDao()
@@ -85,6 +86,7 @@ def post_handle(message):
     server_id=message['Response']['server']['id']
     status=drf_nova.servers.get(server_id).status
     host_id=drf_nova.servers.get(server_id).to_dict()['OS-EXT-SRV-ATTR:host']
+    logger.info('Create shadow VM for ' + server_id + ' in dr site')
     while (status == "BUILD" ):
         time.sleep(1)
         status=drf_nova.servers.get(server_id).status
@@ -116,7 +118,7 @@ def post_handle(message):
                                     nics=[{'net-id':drc_net}]
             )
         else:
-            drc_server=drc_nova.servers.create(name=message['Request']['wsgi.input']['server']['name'],
+            drc_server=drc_nova.servers.create(name=message['Request']['wsgi.input']['server']['name']+"_shadow",
                                     image=drc_image,
                                     flavor=message['Request']['wsgi.input']['server']['flavorRef'],
                                     min_count=message['Request']['wsgi.input']['server']['min_count'],
@@ -145,16 +147,19 @@ def post_handle(message):
         #neutronPortDao.add(DRNeutronPort(primary_uuid=port_id,
         #                                 secondary_uuid=drc_port_id
         #))
+        logger.info('Shadow VM ' + drc_server.id + ' created for ' + server_id + ' in dr site')
+        logger.info('Waiting shadow VM ' + drc_server.id + ' active')
         while (status == "BUILD" ):
             time.sleep(1)
             status=drc_nova.servers.get(drc_server.id).status
+        logger.info('Shadow VM ' + drc_server.id + ' active, power off it')
         if (status == "ACTIVE"):
             drc_nova.servers.stop(drc_server.id)
 
 
 def delete_handle(message):
     novaDao = DRNovaDao()
-    errlog = logging.getLogger("NovaHandler:accept")
+    logger = logging.getLogger("NovaHandler")
     url=message['Request']['url'].split('/')
     server_id=url[len(url)-1]
     cf=ConfigParser.ConfigParser()
@@ -163,6 +168,7 @@ def delete_handle(message):
         drc_id = novaDao.get_by_primary_instance_uuid(server_id).secondary_instance_uuid
     except:
         return
+    logger.info('Delete shadow VM ' + drc_id + ' for '+ server_id + ' in dr site')
     if (drc_id != None):
         drc_ncred={}
         drc_ncred['auth_url']= cf.get("drc","auth_url")
@@ -183,7 +189,7 @@ class NovaHandler(object):
         self.logger.info('Init NovaHandler')
 
     def accept(self, *req, **kwargs):
-        self.logger = logging.getLogger("NovaHandler:accept")
+        self.logger.info("Nova request accept")
         if len(req)>0:
            for i in range(0,len(req)):
                if req[i] != {}:
@@ -204,5 +210,4 @@ class NovaHandler(object):
                         match = pattern.match(message['Request']['url'])
                         if match:
                             delete_handle(message)
-        self.logger.info("--- Hello Nova ---")
         return ['Hello Nova']
