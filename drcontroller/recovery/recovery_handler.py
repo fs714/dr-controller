@@ -24,14 +24,12 @@ class RecoveryHandler(object):
         self.nova_handler = NovaHandler(result_handler)
 
     def start(self, *req, **kwargs):
-        self.logger = logging.getLogger("RecoveryHandler:start")
-
-        self.logger.info("--- Hello Recovery ---")
+        self.logger.info("--- Start Recovery ---")
         flow = self.prepare()
         eng = engines.load(flow)
         eng.run()
         results = eng.storage.fetch_all()
-        print results
+        self.logger.debug(results)
 
         start_vms(self.nova_handler.instance_ids)
         neutron_port_db = DRNeutronPortDao()
@@ -139,7 +137,6 @@ class GlanceHandler(ComponentHandler):
         self.create_role_change_task(self.disc_tasks)
         self.create_mount_task(self.disc_tasks)
         for (uuid_primary, uuid_local) in self.db.get_all_uuids():
-            print (uuid_primary, uuid_local)
             self.image_tasks.setdefault(uuid_local, [])
             self.create_rename_uuid_task(self.image_tasks[uuid_local], self.hosts[0], '/var/lib/glance/images', uuid_primary, uuid_local)
         self.create_service_start_task(self.restore_tasks, self.hosts)
@@ -186,7 +183,6 @@ class NovaHandler(ComponentHandler):
         self.create_role_change_task(self.disc_tasks)
         self.create_mount_task(self.disc_tasks)
         for (instance_uuid_primary, instance_uuid_local, image_uuid_primary, image_uuid_local, host_primary, host_local) in self.db.get_all_uuids_node():#[('', 'f6158ecb-18ca-4295-b3dd-3d7e0f7394d2', '10.175.150.16')]:
-            print (instance_uuid_primary, instance_uuid_local, image_uuid_local)
             self.instance_ids.append(instance_uuid_local)
             host_local = '10.175.150.16' #No!!!
             host_primary = '10.175.150.16' #NO!!!

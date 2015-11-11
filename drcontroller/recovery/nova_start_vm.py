@@ -3,7 +3,10 @@ from neutronclient.neutron import client as neutron_client
 import keystoneclient.v2_0.client as keystoneclient
 import argparse
 import ConfigParser
+import logging
 #from  db_Dao import DRNeutronPortDao
+
+logger = logging.getLogger("RecoveryHandler")
 
 def start_vm(instance_id):
     cf=ConfigParser.ConfigParser()
@@ -31,11 +34,13 @@ def associate_floatingips(ports):
     endpoint = keystone.service_catalog.url_for(service_type='network', endpoint_type='publicURL')
     drc_neutron = neutron_client.Client('2.0', endpoint_url=endpoint, token=keystone.auth_token)
     for (port, floating_ip) in ports:
+        logger.info('Associate floating ip ' + floating_ip + ' to port ' + port)
         drc_neutron.update_floatingip(floating_ip, {"floatingip":{"port_id":port}})
 
 
 def start_vms(instance_ids):
     for instance_id in instance_ids:
+        logger.info('Start VM ' + instance_id)
         start_vm(instance_id)
 
 def parse_arguments():

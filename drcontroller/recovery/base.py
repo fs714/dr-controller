@@ -1,12 +1,12 @@
 import logging
-
+import json
 from ansible.runner import Runner
-
 from taskflow.patterns import linear_flow, unordered_flow
 from taskflow.task import Task
 
 shell_task = Runner(
             host_list=['eselnlx1453'],
+            # host_list=['10.175.150.16'],
             pattern= '*',
             module_name = 'shell',
             module_args='echo "Hello World"')
@@ -17,12 +17,13 @@ copy_task = Runner(
             module_name='copy',
             module_args='src=/home/ejjacci/ansible/example.py dest=/home/ejjacci/tmp/example.py')
 
-logger = logging.getLogger("RecoveryHandler:start")
 
 class AnsibleTask(Task):
     def __init__(self, name, host_list, module_name, module_args, pattern='*', inject=None):
         super(AnsibleTask, self).__init__(name, inject=inject, provides=name) #provides send out the results to engine.storage
         self.name = name
+        self.host_list = host_list
+        self.logger = logging.getLogger("RecoveryHandler:Base")
         self.runner = Runner(
                       host_list = host_list,
                       pattern = pattern,
@@ -33,9 +34,14 @@ class AnsibleTask(Task):
         self.result_handler = result_handler
 
     def execute(self):
-	print 'Executing Task "%s"' % self.name
-	logger.info('Executing Task "%s"' % self.name)
+        self.logger.info('Executing Task ' +  self.name + ':')
+        self.logger.info('\tHosts: ' +  ','.join(self.host_list))
+        self.logger.info('\tModule_name: ' + self.runner.module_name)
+        self.logger.info('\tModule_args: ' + self.runner.module_args)
+        self.logger.info('\tPattern: ' + self.runner.pattern)
         result = self.runner.run()
+        self.logger.debug('Result of Task ' + self.name + ':')
+        self.logger.debug(json.dumps(result, indent=4, sort_keys=True))
         self.result_handler.analyze(self.name, result)
         return result
 

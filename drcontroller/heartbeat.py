@@ -4,7 +4,8 @@ import logging
 
 def heartbeat():
     logger = logging.getLogger('Heartbeat')
-    hostname = '10.175.150.15'
+    # hostname = '10.175.150.15'
+    hostname = '192.168.0.2'
     times_to_check = 3
     previous_cnt = times_to_check
     while(1):
