@@ -18,7 +18,8 @@ class UrlRecorder(object):
     def __call__(self, environ, start_response):
         req = Request(environ)
 
-        if req.method == 'POST' and req.content_type == 'application/json':
+        # if req.method == 'POST' and req.content_type == 'application/json':
+        if req.method == 'POST':
             updated_env = self.print_log(req)
             environ['updated_env'] = updated_env
         else:
@@ -34,10 +35,11 @@ class UrlRecorder(object):
             if name != 'HTTP_OPENSTACK_SERVICE':
                 if self.has_object_address(str(value)):
                     del env[name]
-        env['wsgi.input'] = req.json
-        self.logger.debug('--------------------------------')
-        self.logger.debug(json.dumps(env, indent=4, sort_keys=True))
-        self.logger.debug('--------------------------------')
+        if req.body:
+            env['wsgi.input'] = req.json
+            self.logger.debug('--------------------------------')
+            self.logger.debug(json.dumps(env, indent=4, sort_keys=True))
+            self.logger.debug('--------------------------------')
         return env
 
     def has_object_address(self, value):

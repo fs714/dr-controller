@@ -6,7 +6,6 @@ from taskflow.task import Task
 
 shell_task = Runner(
             host_list=['eselnlx1453'],
-            # host_list=['10.175.150.16'],
             pattern= '*',
             module_name = 'shell',
             module_args='echo "Hello World"')
@@ -40,6 +39,12 @@ class AnsibleTask(Task):
         self.logger.info('\tModule_args: ' + self.runner.module_args)
         self.logger.info('\tPattern: ' + self.runner.pattern)
         result = self.runner.run()
+        # fake_task = Runner(
+        #     host_list=['10.175.150.16'],
+        #     pattern= '*',
+        #     module_name = 'shell',
+        #     module_args='echo "Hello World"')
+        # result = fake_task.run()
         self.logger.debug('Result of Task ' + self.name + ':')
         self.logger.debug(json.dumps(result, indent=4, sort_keys=True))
         self.result_handler.analyze(self.name, result)

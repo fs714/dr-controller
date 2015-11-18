@@ -28,8 +28,8 @@ class RecoveryHandler(object):
         flow = self.prepare()
         eng = engines.load(flow)
         eng.run()
-        results = eng.storage.fetch_all()
-        self.logger.debug(results)
+        # results = eng.storage.fetch_all()
+        # self.logger.debug(results)
 
         start_vms(self.nova_handler.instance_ids)
         neutron_port_db = DRNeutronPortDao()
